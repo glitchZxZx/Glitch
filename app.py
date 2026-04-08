@@ -10,7 +10,7 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 VISION_MODEL  = "meta-llama/llama-4-scout-17b-16e-instruct"
 TEXT_MODEL    = "llama-3.1-8b-instant"
 THINK_MODEL   = "llama-3.3-70b-versatile"   # "think harder" — bigger, slower
-IMAGE_MODEL   = "black-forest-labs/FLUX.1-schnell"  # fal.ai image gen
+IMAGE_MODEL   = "fal-ai/flux/schnell"        # fal.ai image gen (fixed path)
 
 def load_personality():
     try:
