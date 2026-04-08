@@ -73,15 +73,47 @@ def chat():
 
 @app.route("/imagine", methods=["POST"])
 def imagine():
-    """Generate an image via Pollinations.ai (free, no key needed)."""
-    data   = request.get_json()
-    prompt = data.get("prompt", "")
-    if not prompt:
-        return jsonify({"error": "No prompt"}), 400
+    """Generate an image via Pollinations.ai (free, no key needed).
+    Uses Groq to rewrite the user's request into a clean image prompt."""
+    data    = request.get_json()
+    message = data.get("message", "")
+    history = data.get("history", [])   # recent text history for context
 
+    if not message:
+        return jsonify({"error": "No message"}), 400
+
+    # Build context string from recent history (text only, last 6 turns)
+    context_lines = []
+    for m in history[-6:]:
+        if isinstance(m.get("content"), str):
+            role = "User" if m["role"] == "user" else "Glitch"
+            context_lines.append(f"{role}: {m['content']}")
+    context = "\n".join(context_lines)
+
+    # Use Groq to extract a clean, detailed image generation prompt
+    try:
+        system = (
+            "You are a prompt engineer for AI image generation. "
+            "Given the conversation context and the user's latest request, "
+            "write a single, vivid, descriptive image generation prompt (max 80 words). "
+            "Output ONLY the prompt — no explanation, no quotes, no extra text."
+        )
+        user_msg = f"Conversation:\n{context}\n\nUser's request: {message}" if context else f"User's request: {message}"
+
+        resp = client.chat.completions.create(
+            model=TEXT_MODEL,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user_msg}],
+            max_tokens=120
+        )
+        prompt = resp.choices[0].message.content.strip().strip('"').strip("'")
+    except Exception as e:
+        # Fallback: use message as-is
+        prompt = message
+
+    seed = int.from_bytes(os.urandom(4), "big")
     encoded = quote(prompt)
-    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=768&nologo=true&seed={os.urandom(4).hex()}"
-    return jsonify({"url": url})
+    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=768&nologo=true&seed={seed}"
+    return jsonify({"url": url, "prompt": prompt})
 
 
 if __name__ == "__main__":

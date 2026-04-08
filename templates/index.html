@@ -725,12 +725,17 @@ function copyCode(id, btn) {
 /* ── image generation detection ── */
 function detectImageRequest(text) {
   const lower = text.toLowerCase();
-  return /\b(generate|create|make|draw|paint|image of|picture of|show me|imagine)\b/.test(lower)
-    && /\b(image|picture|photo|illustration|artwork|painting|drawing|art)\b/.test(lower);
+  // Must have an action word
+  const hasAction = /\b(generate|create|make|draw|paint|show me|imagine|render)\b/.test(lower);
+  // Must have an image word
+  const hasImageWord = /\b(image|picture|photo|illustration|artwork|painting|drawing|art)\b/.test(lower);
+  // Or shorthand like "image of X" / "pic of X"
+  const hasShorthand = /\b(image of|pic of|picture of|photo of|draw me|paint me)\b/.test(lower);
+  return (hasAction && hasImageWord) || hasShorthand;
 }
 
 function extractImagePrompt(text) {
-  // Try to strip leading instruction words and return a clean prompt
+  // The backend will rewrite this properly — just return the raw text
   return text
     .replace(/^(generate|create|make|draw|paint|show me|imagine|can you|please)\s+(an?\s+)?(image|picture|photo|illustration|artwork|painting|drawing|art)\s+(of\s+)?/i, "")
     .trim() || text;
@@ -899,25 +904,28 @@ async function sendMessage() {
 
 /* ── image generation flow ── */
 async function handleImageGeneration(text) {
-  const prompt = extractImagePrompt(text);
   const bubble = addMessage("assistant", "");
   bubble.innerHTML = `<span style="color:var(--muted);font-size:13px;">✨ Generating image…</span>`;
+
+  // Pass the raw message + recent history so backend can rewrite prompt with context
+  const textHistory = history.filter(m => typeof m.content === "string");
 
   try {
     const res = await fetch("/imagine", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ message: text, history: textHistory })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
-    const reply = `Here's your image for: *${prompt}*`;
+    const displayPrompt = data.prompt || text;
+    const reply = `Here's your image for: *${displayPrompt}*`;
     bubble.innerHTML = renderMarkdown(reply);
     const img = document.createElement("img");
     img.src = data.url;
     img.className = "gen-image";
-    img.alt = prompt;
+    img.alt = displayPrompt;
     img.title = "Click to open full size";
     img.onclick = () => window.open(data.url, "_blank");
     bubble.appendChild(img);
