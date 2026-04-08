@@ -1,16 +1,15 @@
 from flask import Flask, render_template, request, Response, stream_with_context, jsonify
 from groq import Groq
 import os
-import base64
 import requests as req_lib
+from urllib.parse import quote
 
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 VISION_MODEL  = "meta-llama/llama-4-scout-17b-16e-instruct"
 TEXT_MODEL    = "llama-3.1-8b-instant"
-THINK_MODEL   = "llama-3.3-70b-versatile"   # "think harder" — bigger, slower
-IMAGE_MODEL   = "fal-ai/flux/schnell"        # fal.ai image gen (fixed path)
+THINK_MODEL   = "llama-3.3-70b-versatile"
 
 def load_personality():
     try:
@@ -42,7 +41,7 @@ def imprint():
 def chat():
     data = request.get_json()
     history   = data.get("history", [])
-    think     = data.get("think", False)      # think harder flag
+    think     = data.get("think", False)
     has_image = any(isinstance(m.get("content"), list) for m in history)
 
     if think:
@@ -74,27 +73,18 @@ def chat():
 
 @app.route("/imagine", methods=["POST"])
 def imagine():
-    """Generate an image via fal.ai FLUX and return the image URL."""
+    """Generate an image via Pollinations.ai (free, no key needed)."""
     data   = request.get_json()
     prompt = data.get("prompt", "")
     if not prompt:
         return jsonify({"error": "No prompt"}), 400
 
-    fal_key = os.environ.get("FAL_KEY")
-    if not fal_key:
-        return jsonify({"error": "FAL_KEY not set"}), 500
-
     try:
-        # fal.ai REST API
-        resp = req_lib.post(
-            f"https://fal.run/{IMAGE_MODEL}",
-            headers={"Authorization": f"Key {fal_key}", "Content-Type": "application/json"},
-            json={"prompt": prompt, "image_size": "landscape_4_3", "num_inference_steps": 4, "num_images": 1},
-            timeout=60
-        )
+        encoded = quote(prompt)
+        url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=768&nologo=true"
+        # Verify the URL is reachable
+        resp = req_lib.head(url, timeout=15)
         resp.raise_for_status()
-        result = resp.json()
-        url = result["images"][0]["url"]
         return jsonify({"url": url})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
