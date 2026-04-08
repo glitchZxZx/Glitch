@@ -393,7 +393,6 @@ body {
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
   <div class="sidebar-header">
     <div class="glitch-avatar" id="sidebar-avatar">G</div>
@@ -407,7 +406,6 @@ body {
   <div class="history-list" id="history-list"></div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
@@ -434,7 +432,7 @@ body {
         <textarea id="user-input" placeholder="Message Glitch..." rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
 
-        <!-- Think harder toggle -->
+        
         <button class="icon-btn think-btn" id="think-btn" title="Think harder" onclick="toggleThink()">
           <div class="think-tooltip" id="think-tooltip">Think harder</div>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -443,7 +441,7 @@ body {
           </svg>
         </button>
 
-        <!-- Game -->
+        
         <button class="icon-btn" title="Play a game with Glitch" onclick="openGameModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="6" width="20" height="12" rx="4"/>
@@ -453,7 +451,7 @@ body {
           </svg>
         </button>
 
-        <!-- Attach image -->
+        
         <label class="icon-btn" title="Attach image" style="cursor:pointer;">
           <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleImage(event)"/>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -479,10 +477,8 @@ body {
   </div>
 </div>
 
-<!-- Paste hint -->
 <div class="paste-hint" id="paste-hint">📋 Image pasted!</div>
 
-<!-- GAME MODAL -->
 <div class="modal-overlay" id="game-modal" onclick="closeGameModalOutside(event)">
   <div class="modal">
     <div class="modal-header">
@@ -498,7 +494,7 @@ body {
         <div class="game-tab" onclick="switchGame('c4')" id="tab-c4">🔴 Connect 4</div>
       </div>
 
-      <!-- RPS -->
+      
       <div id="game-rps">
         <div class="rps-scoreboard">
           <div class="rps-player">
@@ -521,7 +517,7 @@ body {
         </div>
       </div>
 
-      <!-- Connect 4 -->
+      
       <div id="game-c4" style="display:none;">
         <div class="c4-status" id="c4-status">Your turn 🔴</div>
         <div class="c4-board" id="c4-board"></div>
@@ -555,7 +551,6 @@ const previewStrip = document.getElementById("preview-strip");
 const topbarModel  = document.getElementById("topbar-model");
 const thinkBtn     = document.getElementById("think-btn");
 
-/* ── avatars ── */
 function setAvatars() {
   document.querySelectorAll("#sidebar-avatar, #empty-avatar, .msg-meta-avatar.glitch-av").forEach(el => {
     const img = document.createElement("img");
@@ -576,7 +571,6 @@ function handleKey(e) {
 }
 function scrollBottom() { chatArea.scrollTop = chatArea.scrollHeight; }
 
-/* ── think harder toggle ── */
 function toggleThink() {
   thinkMode = !thinkMode;
   thinkBtn.classList.toggle("active", thinkMode);
@@ -594,7 +588,6 @@ function updateTopbarModel() {
   }
 }
 
-/* ── paste image from clipboard ── */
 document.addEventListener("paste", (e) => {
   const items = Array.from(e.clipboardData?.items || []);
   const imgItem = items.find(i => i.type.startsWith("image/"));
@@ -614,17 +607,13 @@ document.addEventListener("paste", (e) => {
   reader.readAsDataURL(file);
 });
 
-/* ── markdown renderer ── */
 function renderMarkdown(text) {
-  // We'll build an HTML string from the text
   const lines = text.split("\n");
   let html = "";
   let i = 0;
 
   while (i < lines.length) {
     const line = lines[i];
-
-    // Fenced code block
     const fenceMatch = line.match(/^```(\w*)$/);
     if (fenceMatch) {
       const lang = fenceMatch[1] || "code";
@@ -646,24 +635,16 @@ function renderMarkdown(text) {
       </div>`;
       continue;
     }
-
-    // Headings
     const h3 = line.match(/^### (.+)/);
     if (h3) { html += `<h3>${inlineMd(h3[1])}</h3>`; i++; continue; }
     const h2 = line.match(/^## (.+)/);
     if (h2) { html += `<h2>${inlineMd(h2[1])}</h2>`; i++; continue; }
     const h1 = line.match(/^# (.+)/);
     if (h1) { html += `<h1>${inlineMd(h1[1])}</h1>`; i++; continue; }
-
-    // HR
     if (/^---+$/.test(line.trim())) { html += "<hr>"; i++; continue; }
-
-    // Blockquote
     if (line.startsWith("> ")) {
       html += `<blockquote>${inlineMd(line.slice(2))}</blockquote>`; i++; continue;
     }
-
-    // Unordered list
     if (/^[\-\*] /.test(line)) {
       html += "<ul>";
       while (i < lines.length && /^[\-\*] /.test(lines[i])) {
@@ -673,8 +654,6 @@ function renderMarkdown(text) {
       html += "</ul>";
       continue;
     }
-
-    // Ordered list
     if (/^\d+\. /.test(line)) {
       html += "<ol>";
       while (i < lines.length && /^\d+\. /.test(lines[i])) {
@@ -684,11 +663,7 @@ function renderMarkdown(text) {
       html += "</ol>";
       continue;
     }
-
-    // Empty line = paragraph break
     if (line.trim() === "") { html += "<br>"; i++; continue; }
-
-    // Regular paragraph line
     html += `<p>${inlineMd(line)}</p>`;
     i++;
   }
@@ -698,13 +673,9 @@ function renderMarkdown(text) {
 
 function inlineMd(text) {
   return escHtml(text)
-    // bold
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    // italic
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    // inline code
     .replace(/`([^`]+)`/g, '<code>$1</code>')
-    // links
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
 }
 
@@ -722,26 +693,20 @@ function copyCode(id, btn) {
   });
 }
 
-/* ── image generation detection ── */
 function detectImageRequest(text) {
   const lower = text.toLowerCase();
-  // Must have an action word
   const hasAction = /\b(generate|create|make|draw|paint|show me|imagine|render)\b/.test(lower);
-  // Must have an image word
   const hasImageWord = /\b(image|picture|photo|illustration|artwork|painting|drawing|art)\b/.test(lower);
-  // Or shorthand like "image of X" / "pic of X"
   const hasShorthand = /\b(image of|pic of|picture of|photo of|draw me|paint me)\b/.test(lower);
   return (hasAction && hasImageWord) || hasShorthand;
 }
 
 function extractImagePrompt(text) {
-  // The backend will rewrite this properly — just return the raw text
   return text
     .replace(/^(generate|create|make|draw|paint|show me|imagine|can you|please)\s+(an?\s+)?(image|picture|photo|illustration|artwork|painting|drawing|art)\s+(of\s+)?/i, "")
     .trim() || text;
 }
 
-/* ── avatar helper ── */
 function makeAvatarEl(isUser) {
   const av = document.createElement("div");
   av.className = "msg-meta-avatar" + (isUser ? "" : " glitch-av");
@@ -757,7 +722,6 @@ function makeAvatarEl(isUser) {
   return av;
 }
 
-/* ── add message to DOM ── */
 function addMessage(role, text, imageDataUrl) {
   document.getElementById("empty-state")?.remove();
   const isUser = role === "user";
@@ -778,7 +742,6 @@ function addMessage(role, text, imageDataUrl) {
     img.className = "msg-image";
     bubble.appendChild(img);
   }
-  // For user messages keep plain text; for glitch render markdown
   if (isUser) {
     const textNode = document.createElement("span");
     textNode.textContent = text;
@@ -789,7 +752,6 @@ function addMessage(role, text, imageDataUrl) {
     scrollBottom();
     return null; // user messages don't need live update handle
   } else {
-    // glitch: we return the bubble itself for live streaming
     row.appendChild(meta);
     row.appendChild(bubble);
     chatInner.appendChild(row);
@@ -803,7 +765,6 @@ function updateBubble(bubble, text) {
   bubble.innerHTML = renderMarkdown(text);
 }
 
-/* ── image handling ── */
 function handleImage(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -832,7 +793,6 @@ function renderPreviews() {
   });
 }
 
-/* ── send message ── */
 async function sendMessage() {
   if (thinking) return;
   const text = userInput.value.trim();
@@ -855,16 +815,12 @@ async function sendMessage() {
     currentIndex = 0;
     saveAndRenderSidebar();
   }
-
-  // Check if this is an image generation request
   if (!imgs.length && detectImageRequest(text)) {
     await handleImageGeneration(text);
     thinking = false; sendBtn.disabled = false; userInput.focus();
     updateTopbarModel();
     return;
   }
-
-  // Normal chat
   const bubble = addMessage("assistant", "");
   const cursor = document.createElement("span");
   cursor.className = "cursor";
@@ -883,7 +839,6 @@ async function sendMessage() {
       const { done, value } = await reader.read();
       if (done) break;
       reply += decoder.decode(value, { stream: true });
-      // Remove cursor before re-rendering
       cursor.remove();
       updateBubble(bubble, reply);
       bubble.appendChild(cursor);
@@ -902,14 +857,10 @@ async function sendMessage() {
   updateTopbarModel();
 }
 
-/* ── image generation flow ── */
 async function handleImageGeneration(text) {
   const bubble = addMessage("assistant", "");
   bubble.innerHTML = `<span style="color:var(--muted);font-size:13px;">✨ Generating image…</span>`;
-
-  // Pass the raw message + recent history so backend can rewrite prompt with context
   const textHistory = history.filter(m => typeof m.content === "string");
-
   try {
     const res = await fetch("/imagine", {
       method: "POST",
@@ -918,18 +869,15 @@ async function handleImageGeneration(text) {
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-
-    const displayPrompt = data.prompt || text;
-    const reply = `Here's your image for: *${displayPrompt}*`;
+    const reply = "Here's your image:";
     bubble.innerHTML = renderMarkdown(reply);
     const img = document.createElement("img");
     img.src = data.url;
     img.className = "gen-image";
-    img.alt = displayPrompt;
+    img.alt = text;
     img.title = "Click to open full size";
     img.onclick = () => window.open(data.url, "_blank");
     bubble.appendChild(img);
-
     history.push({ role: "assistant", content: reply });
     sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
     saveAndRenderSidebar();
@@ -939,7 +887,6 @@ async function handleImageGeneration(text) {
   scrollBottom();
 }
 
-/* ── sidebar ── */
 function saveAndRenderSidebar() {
   localStorage.setItem("glitch_sessions", JSON.stringify(sessions.slice(0, 30)));
   renderSidebar();
@@ -1006,7 +953,6 @@ function newChat() {
 renderSidebar();
 updateTopbarModel();
 
-/* ── GAME MODAL ── */
 function openGameModal() { document.getElementById("game-modal").classList.add("open"); }
 function closeGameModal() { document.getElementById("game-modal").classList.remove("open"); }
 function closeGameModalOutside(e) { if (e.target === document.getElementById("game-modal")) closeGameModal(); }
