@@ -189,85 +189,115 @@ body {
 
 /* GAME MODAL */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
+  position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center;
   z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s;
 }
 .modal-overlay.open { opacity: 1; pointer-events: all; }
 .modal {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; padding: 28px 28px 24px;
-  width: 340px; max-width: 90vw;
-  transform: scale(0.95) translateY(8px); transition: transform 0.2s;
-  position: relative;
+  background: #131317; border: 1px solid var(--border);
+  border-radius: 22px; padding: 0;
+  width: 360px; max-width: 94vw;
+  transform: scale(0.96) translateY(10px);
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: hidden;
 }
 .modal-overlay.open .modal { transform: scale(1) translateY(0); }
-.modal-close {
-  position: absolute; top: 14px; right: 14px; background: none; border: none;
-  color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1;
-  padding: 4px; border-radius: 6px; transition: color 0.12s;
+.modal-header {
+  padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
 }
-.modal-close:hover { color: var(--text); }
-.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.02em; }
-.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-
-.game-picker { display: flex; gap: 10px; margin-bottom: 20px; }
-.game-tab {
-  flex: 1; padding: 10px 8px; border-radius: 10px;
+.modal-header-left { display: flex; flex-direction: column; gap: 2px; }
+.modal-title { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+.modal-sub { font-size: 12px; color: var(--muted); }
+.modal-close {
   background: var(--surface2); border: 1px solid var(--border);
-  color: var(--muted); font-size: 13px; font-weight: 500;
+  color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 600;
+  width: 26px; height: 26px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.12s, border-color 0.12s; flex-shrink: 0;
+}
+.modal-close:hover { color: var(--text); border-color: var(--muted); }
+.modal-body { padding: 16px 22px 20px; }
+
+.game-picker {
+  display: flex; gap: 4px; margin-bottom: 16px;
+  background: var(--surface2); border-radius: 10px; padding: 3px;
+  border: 1px solid var(--border);
+}
+.game-tab {
+  flex: 1; padding: 6px 8px; border-radius: 7px;
+  background: none; border: none;
+  color: var(--muted); font-size: 12.5px; font-weight: 500;
   cursor: pointer; text-align: center; transition: all 0.15s;
 }
-.game-tab:hover { color: var(--text); border-color: var(--purple-soft); }
-.game-tab.active { background: var(--user-bg); border-color: var(--purple); color: var(--purple-soft); }
+.game-tab:hover { color: var(--text); }
+.game-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
 
-/* RPS */
-.rps-score {
-  display: flex; justify-content: space-between; align-items: center;
+/* RPS scoreboard */
+.rps-scoreboard {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: 8px; margin-bottom: 14px;
+}
+.rps-player {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
   background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: var(--muted);
+  border-radius: 12px; padding: 10px 6px;
 }
-.rps-score strong { color: var(--text); font-size: 15px; }
+.rps-player-name { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+.rps-player-score { font-size: 30px; font-weight: 700; color: var(--text); line-height: 1; }
+.rps-vs { font-size: 11px; font-weight: 600; color: var(--muted); text-align: center; }
+
 .rps-result {
-  text-align: center; min-height: 76px; margin-bottom: 14px;
-  font-size: 13.5px; color: var(--text); line-height: 1.6;
-  background: var(--surface2); border-radius: 10px; border: 1px solid var(--border);
-  padding: 12px 14px; display: flex; align-items: center; justify-content: center;
+  text-align: center; min-height: 84px; margin-bottom: 14px;
+  background: var(--surface2); border-radius: 12px; border: 1px solid var(--border);
+  padding: 14px 16px; display: flex; align-items: center; justify-content: center;
 }
-.rps-choices { display: flex; gap: 10px; justify-content: center; }
+.rps-result-inner { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.rps-emojis { font-size: 28px; letter-spacing: 10px; line-height: 1; }
+.rps-outcome { font-size: 14px; font-weight: 600; color: var(--text); }
+.rps-quip { font-size: 12px; color: var(--muted); text-align: center; max-width: 220px; }
+.rps-prompt { font-size: 13px; color: var(--muted); }
+
+.rps-choices { display: flex; gap: 8px; justify-content: center; }
 .rps-btn {
-  width: 72px; height: 72px; background: var(--surface2);
+  flex: 1; height: 70px; background: var(--surface2);
   border: 1px solid var(--border); border-radius: 14px; font-size: 28px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: transform 0.1s, border-color 0.15s, background 0.15s;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 4px;
+  transition: transform 0.12s, border-color 0.15s, background 0.15s;
 }
-.rps-btn:hover { transform: scale(1.08); border-color: var(--purple-soft); background: var(--user-bg); }
-.rps-btn:active { transform: scale(0.95); }
+.rps-btn-label { font-size: 10px; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; }
+.rps-btn:hover { transform: translateY(-3px); border-color: var(--purple-soft); background: var(--user-bg); }
+.rps-btn:active { transform: scale(0.94); }
 
 /* Connect 4 */
-.c4-status { text-align: center; font-size: 13.5px; color: var(--text); margin-bottom: 12px; min-height: 20px; }
+.c4-status {
+  text-align: center; font-size: 13px; font-weight: 500; color: var(--text);
+  margin-bottom: 10px; min-height: 20px;
+}
 .c4-board {
-  background: var(--purple); border-radius: 12px; padding: 8px;
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 14px;
+  background: var(--purple); border-radius: 12px; padding: 7px;
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px;
 }
 .c4-cell {
-  aspect-ratio: 1; border-radius: 50%; background: var(--bg);
-  cursor: pointer; transition: background 0.15s, transform 0.1s;
+  aspect-ratio: 1; border-radius: 50%; background: #0e0e11;
+  cursor: pointer; transition: background 0.12s, transform 0.1s;
 }
-.c4-cell:hover { transform: scale(1.05); }
-.c4-cell.p1 { background: #f97316; }
-.c4-cell.p2 { background: #facc15; }
-.c4-cell.win { animation: cellPop 0.4s ease forwards; }
-@keyframes cellPop { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
-.c4-legend { display: flex; gap: 16px; justify-content: center; font-size: 12px; color: var(--muted); }
+.c4-cell:hover { transform: scale(1.08); background: #1c1c22; }
+.c4-cell.p1 { background: #f97316; box-shadow: 0 0 7px rgba(249,115,22,0.45); }
+.c4-cell.p2 { background: #facc15; box-shadow: 0 0 7px rgba(250,204,21,0.45); }
+.c4-cell.win { animation: cellPop 0.45s ease forwards; }
+@keyframes cellPop { 0%{transform:scale(1)} 40%{transform:scale(1.24)} 100%{transform:scale(1.1)} }
+.c4-legend { display: flex; gap: 16px; justify-content: center; font-size: 11.5px; color: var(--muted); }
 .c4-legend span { display: flex; align-items: center; gap: 5px; }
-.c4-dot { width: 10px; height: 10px; border-radius: 50%; }
+.c4-dot { width: 9px; height: 9px; border-radius: 50%; }
 
 .game-new-btn {
-  width: 100%; padding: 10px; border-radius: 10px;
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--muted); font-size: 13px; cursor: pointer; margin-top: 8px; transition: all 0.15s;
+  width: 100%; padding: 9px; border-radius: 10px;
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); font-size: 12.5px; cursor: pointer; margin-top: 14px; transition: all 0.15s;
 }
 .game-new-btn:hover { border-color: var(--purple-soft); color: var(--text); }
 
@@ -351,41 +381,54 @@ body {
 <!-- GAME MODAL -->
 <div class="modal-overlay" id="game-modal" onclick="closeGameModalOutside(event)">
   <div class="modal">
-    <button class="modal-close" onclick="closeGameModal()">×</button>
-    <div class="modal-title">Play with Glitch 🎮</div>
-    <div class="modal-sub" id="game-modal-sub">Pick a game</div>
-
-    <div class="game-picker">
-      <div class="game-tab active" onclick="switchGame('rps')" id="tab-rps">✊ RPS</div>
-      <div class="game-tab" onclick="switchGame('c4')" id="tab-c4">🔴 Connect 4</div>
-    </div>
-
-    <!-- RPS -->
-    <div id="game-rps">
-      <div class="rps-score">
-        <span>You <strong id="rps-you">0</strong></span>
-        <span style="color:var(--muted);font-size:11px;">wins</span>
-        <span>Glitch <strong id="rps-glitch">0</strong></span>
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-title">Play with Glitch 🎮</div>
+        <div class="modal-sub" id="game-modal-sub">Rock Paper Scissors</div>
       </div>
-      <div class="rps-result" id="rps-result">Pick your move 👇</div>
-      <div class="rps-choices">
-        <button class="rps-btn" onclick="playRPS('rock')" title="Rock">✊</button>
-        <button class="rps-btn" onclick="playRPS('paper')" title="Paper">✋</button>
-        <button class="rps-btn" onclick="playRPS('scissors')" title="Scissors">✌️</button>
-      </div>
+      <button class="modal-close" onclick="closeGameModal()">×</button>
     </div>
-
-    <!-- Connect 4 -->
-    <div id="game-c4" style="display:none;">
-      <div class="c4-status" id="c4-status">Your turn 🔴</div>
-      <div class="c4-board" id="c4-board"></div>
-      <div class="c4-legend">
-        <span><div class="c4-dot" style="background:#f97316"></div> You</span>
-        <span><div class="c4-dot" style="background:#facc15"></div> Glitch</span>
+    <div class="modal-body">
+      <div class="game-picker">
+        <div class="game-tab active" onclick="switchGame('rps')" id="tab-rps">✊ RPS</div>
+        <div class="game-tab" onclick="switchGame('c4')" id="tab-c4">🔴 Connect 4</div>
       </div>
-    </div>
 
-    <button class="game-new-btn" onclick="resetCurrentGame()">↺ New game</button>
+      <!-- RPS -->
+      <div id="game-rps">
+        <div class="rps-scoreboard">
+          <div class="rps-player">
+            <span class="rps-player-name">You</span>
+            <span class="rps-player-score" id="rps-you">0</span>
+          </div>
+          <div class="rps-vs">vs</div>
+          <div class="rps-player">
+            <span class="rps-player-name">Glitch</span>
+            <span class="rps-player-score" id="rps-glitch">0</span>
+          </div>
+        </div>
+        <div class="rps-result" id="rps-result">
+          <span class="rps-prompt">pick your move 👇</span>
+        </div>
+        <div class="rps-choices">
+          <button class="rps-btn" onclick="playRPS('rock')">✊<span class="rps-btn-label">Rock</span></button>
+          <button class="rps-btn" onclick="playRPS('paper')">✋<span class="rps-btn-label">Paper</span></button>
+          <button class="rps-btn" onclick="playRPS('scissors')">✌️<span class="rps-btn-label">Scissors</span></button>
+        </div>
+      </div>
+
+      <!-- Connect 4 -->
+      <div id="game-c4" style="display:none;">
+        <div class="c4-status" id="c4-status">Your turn 🔴</div>
+        <div class="c4-board" id="c4-board"></div>
+        <div class="c4-legend">
+          <span><div class="c4-dot" style="background:#f97316"></div> You</span>
+          <span><div class="c4-dot" style="background:#facc15"></div> Glitch</span>
+        </div>
+      </div>
+
+      <button class="game-new-btn" onclick="resetCurrentGame()">↺ new game</button>
+    </div>
   </div>
 </div>
 
@@ -615,28 +658,60 @@ function switchGame(game) {
 let rpsYou = 0, rpsGlitch = 0, rpsTotal = 0;
 const rpsChoices = ["rock", "scissors", "paper"];
 const rpsEmoji = { rock: "✊", paper: "✋", scissors: "✌️" };
-const rpsWinQuips  = ["wait WHAT 😭 okay that's fair","no way... lucky shot 👀","ugh fine. you win this one 😤","okay I respect it. but just this once.","how do you keep doing that 😭","bold move. it worked. annoying."];
-const rpsLoseQuips = ["called it 😌 too easy","heh. I'm just built different.","knew you'd pick that 👀","not even trying at this point lol","one step ahead, always 😌","honestly? I saw that coming a mile away."];
-const rpsTieQuips  = ["okay we're literally the same person","a tie? really? come on.","we need to stop thinking alike lol","...are you copying me??"];
+const rpsWinQuips  = [
+  "wait WHAT 😭 okay that's fair",
+  "no way... lucky shot 👀",
+  "ugh fine you win this one 😤",
+  "okay I respect it but just this once",
+  "how do you keep doing that 😭",
+  "bold move it worked annoying",
+  "I was not ready for that at all",
+];
+const rpsLoseQuips = [
+  "called it 😌 too easy",
+  "heh I'm just built different",
+  "knew you'd pick that 👀",
+  "not even trying at this point lol",
+  "one step ahead always 😌",
+  "honestly? saw that coming a mile away",
+  "you walked right into that one",
+];
+const rpsTieQuips = [
+  "okay we're literally the same person",
+  "a tie really come on",
+  "we need to stop thinking alike lol",
+  "are you copying me??",
+  "this is getting weird",
+];
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function playRPS(userChoice) {
   const glitchChoice = rpsChoices[Math.floor(Math.random() * 3)];
   rpsTotal++;
   let outcome;
   if (userChoice === glitchChoice) { outcome = "tie"; }
-  else if ((userChoice==="rock"&&glitchChoice==="scissors")||(userChoice==="paper"&&glitchChoice==="rock")||(userChoice==="scissors"&&glitchChoice==="paper")) { outcome = "win"; rpsYou++; }
+  else if (
+    (userChoice==="rock"&&glitchChoice==="scissors") ||
+    (userChoice==="paper"&&glitchChoice==="rock") ||
+    (userChoice==="scissors"&&glitchChoice==="paper")
+  ) { outcome = "win"; rpsYou++; }
   else { outcome = "lose"; rpsGlitch++; }
+
   document.getElementById("rps-you").textContent = rpsYou;
   document.getElementById("rps-glitch").textContent = rpsGlitch;
-  let quip = outcome==="win" ? rpsWinQuips[Math.floor(Math.random()*rpsWinQuips.length)]
-           : outcome==="lose" ? rpsLoseQuips[Math.floor(Math.random()*rpsLoseQuips.length)]
-           : rpsTieQuips[Math.floor(Math.random()*rpsTieQuips.length)];
-  let memNote = "";
-  if (rpsTotal >= 4 && rpsYou >= 3) memNote = ` (you've beaten me ${rpsYou} times... suspicious 👀)`;
-  else if (rpsTotal >= 4 && rpsGlitch >= 3) memNote = ` (${rpsGlitch} for me, not that I'm counting)`;
-  const label = outcome==="win" ? "You win 🎉" : outcome==="lose" ? "Glitch wins 😌" : "Tie 🤝";
+
+  let quip = outcome==="win" ? pick(rpsWinQuips) : outcome==="lose" ? pick(rpsLoseQuips) : pick(rpsTieQuips);
+  if (rpsTotal >= 4 && rpsYou >= 3) quip = `you've beaten me ${rpsYou} times now... suspicious 👀`;
+  else if (rpsTotal >= 4 && rpsGlitch >= 3) quip = `${rpsGlitch} wins for me not that I'm counting`;
+
+  const label = outcome==="win" ? "you win 🎉" : outcome==="lose" ? "glitch wins 😌" : "it's a tie 🤝";
   document.getElementById("rps-result").innerHTML =
-    `<div style="text-align:center"><div style="font-size:26px;margin-bottom:6px">${rpsEmoji[userChoice]} vs ${rpsEmoji[glitchChoice]}</div><div style="font-weight:600;margin-bottom:4px">${label}</div><div style="font-size:12.5px;color:var(--muted)">${quip}${memNote}</div></div>`;
+    `<div class="rps-result-inner">
+      <div class="rps-emojis">${rpsEmoji[userChoice]} ${rpsEmoji[glitchChoice]}</div>
+      <div class="rps-outcome">${label}</div>
+      <div class="rps-quip">${quip}</div>
+    </div>`;
 }
 
 /* CONNECT 4 */
@@ -672,9 +747,9 @@ function c4AiMove(){
   const col=c4BestMove(); const row=c4FindRow(col); if(row===-1)return;
   c4Board[row][col]=2; renderC4();
   const win=c4Check(row,col,2);
-  if(win){c4Highlight(win);const q=["gotcha 😌","too easy lol","you never had me","and that's game 😤","I wasn't even trying... jk I was"];document.getElementById("c4-status").textContent="Glitch wins 😌 — "+q[Math.floor(Math.random()*q.length)];c4Over=true;return;}
+  if(win){c4Highlight(win);const q=["gotcha 😌","too easy lol","you never had me","and that's game 😤","I wasn't even trying... jk I was"];document.getElementById("c4-status").textContent="Glitch wins 😌 "+q[Math.floor(Math.random()*q.length)];c4Over=true;return;}
   if(c4IsFull()){document.getElementById("c4-status").textContent="It's a draw 🤝";c4Over=true;return;}
-  c4Turn=1; document.getElementById("c4-status").textContent="Your turn 🔴";
+  c4Turn=1; renderC4(); document.getElementById("c4-status").textContent="Your turn 🔴";
 }
 function c4BestMove(){
   for(let c=0;c<COLS;c++){const r=c4FindRow(c);if(r===-1)continue;c4Board[r][c]=2;if(c4Check(r,c,2)){c4Board[r][c]=0;return c;}c4Board[r][c]=0;}
@@ -703,7 +778,7 @@ function resetCurrentGame(){
     rpsYou=0;rpsGlitch=0;rpsTotal=0;
     document.getElementById("rps-you").textContent="0";
     document.getElementById("rps-glitch").textContent="0";
-    document.getElementById("rps-result").textContent="Pick your move 👇";
+    document.getElementById("rps-result").innerHTML='<span class="rps-prompt">pick your move 👇</span>';
   } else { initC4(); }
 }
 </script>
