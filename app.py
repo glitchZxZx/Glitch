@@ -79,15 +79,9 @@ def imagine():
     if not prompt:
         return jsonify({"error": "No prompt"}), 400
 
-    try:
-        encoded = quote(prompt)
-        url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=768&nologo=true"
-        # Verify the URL is reachable
-        resp = req_lib.head(url, timeout=15)
-        resp.raise_for_status()
-        return jsonify({"url": url})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    encoded = quote(prompt)
+    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=768&nologo=true&seed={os.urandom(4).hex()}"
+    return jsonify({"url": url})
 
 
 if __name__ == "__main__":
