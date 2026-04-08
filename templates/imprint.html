@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Imprint — Glitch</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0e0e11; --surface: #16161a; --border: #2a2a35;
+  --purple: #7c6ef0; --text: #e8e8f0; --muted: #6b6b80;
+}
+body { font-family: -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; }
+nav {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 14px 24px; display: flex; align-items: center; gap: 12px;
+}
+nav a { color: var(--purple); text-decoration: none; font-size: 14px; }
+nav span { color: var(--muted); font-size: 14px; }
+.page { max-width: 680px; margin: 0 auto; padding: 48px 24px 80px; }
+h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
+.meta { font-size: 13px; color: var(--muted); margin-bottom: 40px; }
+h2 { font-size: 16px; font-weight: 600; margin: 32px 0 10px; color: var(--text); }
+p, li { font-size: 14.5px; line-height: 1.75; color: #b0b0c8; }
+a { color: var(--purple); }
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px 22px; margin-top: 24px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.card-row { display: flex; gap: 16px; font-size: 14px; }
+.card-label { color: var(--muted); min-width: 90px; flex-shrink: 0; }
+.card-value { color: var(--text); }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">← Back to Glitch</a>
+  <span>/</span>
+  <span>Imprint</span>
+</nav>
+<div class="page">
+  <h1>Imprint</h1>
+  <p class="meta">Oplysningspligt i henhold til dansk lovgivning · Information pursuant to Danish law</p>
+
+  <p>This website is operated as a personal, non-commercial project. The following information is provided in accordance with Danish disclosure obligations (oplysningspligt) under the E-Commerce Act (E-handelsloven).</p>
+
+  <div class="card">
+    <div class="card-row">
+      <span class="card-label">Name</span>
+      <span class="card-value">Krystal</span>
+    </div>
+    <div class="card-row">
+      <span class="card-label">Country</span>
+      <span class="card-value">Denmark</span>
+    </div>
+    <div class="card-row">
+      <span class="card-label">Email</span>
+      <span class="card-value"><a href="mailto:glitch.l.l.m.ai@gmail.com">glitch.l.l.m.ai@gmail.com</a></span>
+    </div>
+    <div class="card-row">
+      <span class="card-label">Website</span>
+      <span class="card-value">glitch-ozuf.onrender.com</span>
+    </div>
+    <div class="card-row">
+      <span class="card-label">Purpose</span>
+      <span class="card-value">Personal, non-commercial AI chat project</span>
+    </div>
+  </div>
+
+  <h2>Dispute resolution</h2>
+  <p>The European Commission provides an online dispute resolution platform: <a href="https://ec.europa.eu/consumers/odr" target="_blank">ec.europa.eu/consumers/odr</a>. We are not obligated to participate in dispute resolution proceedings before a consumer arbitration board, nor do we voluntarily do so.</p>
+
+  <h2>Liability for content</h2>
+  <p>The content of this website has been created with care. However, we cannot guarantee the accuracy, completeness, or timeliness of the content. As a service provider we are responsible for our own content on these pages in accordance with general law. AI-generated responses may be inaccurate — always use your own judgment.</p>
+</div>
+</body>
+</html>
