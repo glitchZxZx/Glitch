@@ -19,6 +19,8 @@
   --user-bg: #1e1c35;
   --user-border: #3a3560;
   --danger: #e24b4a;
+  --code-bg: #0a0a0d;
+  --think-color: #f59e0b;
 }
 
 body {
@@ -92,7 +94,9 @@ body {
 .topbar-model {
   font-size: 11px; color: var(--muted); background: var(--surface2);
   padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+  transition: color 0.2s, border-color 0.2s;
 }
+.topbar-model.think-mode { color: var(--think-color); border-color: var(--think-color); }
 
 /* CHAT */
 .chat-area { flex: 1; overflow-y: auto; padding: 28px 0 8px; scroll-behavior: smooth; }
@@ -127,17 +131,75 @@ body {
 .msg-meta-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .msg-bubble {
   max-width: 78%; padding: 11px 15px; border-radius: 16px;
-  font-size: 14.5px; line-height: 1.65; white-space: pre-wrap; word-break: break-word;
+  font-size: 14.5px; line-height: 1.65; word-break: break-word;
 }
 .msg-row.user .msg-bubble {
   background: var(--user-bg); border: 1px solid var(--user-border);
-  border-bottom-right-radius: 5px; color: var(--text);
+  border-bottom-right-radius: 5px; color: var(--text); white-space: pre-wrap;
 }
 .msg-row.glitch .msg-bubble {
   background: var(--surface2); border: 1px solid var(--border);
   border-bottom-left-radius: 5px; color: var(--text);
 }
+
+/* Markdown in glitch bubbles */
+.msg-bubble p { margin: 0 0 8px; }
+.msg-bubble p:last-child { margin-bottom: 0; }
+.msg-bubble strong { font-weight: 700; color: var(--text); }
+.msg-bubble em { font-style: italic; }
+.msg-bubble ul, .msg-bubble ol { padding-left: 18px; margin: 6px 0; }
+.msg-bubble li { margin: 3px 0; }
+.msg-bubble h1, .msg-bubble h2, .msg-bubble h3 {
+  font-weight: 700; margin: 10px 0 5px; letter-spacing: -0.01em;
+}
+.msg-bubble h1 { font-size: 1.15em; }
+.msg-bubble h2 { font-size: 1.05em; }
+.msg-bubble h3 { font-size: 0.97em; color: var(--purple-soft); }
+.msg-bubble a { color: var(--purple-soft); text-decoration: underline; }
+.msg-bubble blockquote {
+  border-left: 3px solid var(--border); padding-left: 10px;
+  margin: 6px 0; color: var(--muted);
+}
+.msg-bubble hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+/* Inline code */
+.msg-bubble code:not(.block-code) {
+  background: var(--code-bg); color: #c084fc;
+  padding: 2px 5px; border-radius: 4px; font-family: "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.88em; border: 1px solid var(--border);
+}
+
+/* Code block */
+.code-block {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 10px; margin: 8px 0; overflow: hidden; font-size: 13px;
+}
+.code-block-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px; border-bottom: 1px solid var(--border);
+  background: #111116;
+}
+.code-lang { font-size: 11px; color: var(--muted); font-family: monospace; text-transform: lowercase; }
+.copy-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 5px; padding: 2px 8px; font-size: 11px; cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.copy-btn:hover { color: var(--text); border-color: var(--purple-soft); }
+.copy-btn.copied { color: #4ade80; border-color: #4ade80; }
+.code-block pre {
+  padding: 12px 14px; overflow-x: auto; margin: 0;
+  font-family: "Fira Code", "Cascadia Code", "Consolas", monospace;
+  line-height: 1.6; color: #c8c8e0;
+}
+.code-block pre::-webkit-scrollbar { height: 4px; }
+.code-block pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Generated image in chat */
 .msg-image { max-width: 260px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 6px; display: block; }
+.gen-image { max-width: 320px; border-radius: 12px; border: 1px solid var(--border); margin-top: 8px; display: block; cursor: pointer; transition: opacity 0.15s; }
+.gen-image:hover { opacity: 0.92; }
+
 .cursor {
   display: inline-block; width: 2px; height: 14px;
   background: var(--purple-soft); margin-left: 2px; vertical-align: middle;
@@ -172,10 +234,26 @@ body {
   width: 32px; height: 32px; background: none; border: 1px solid var(--border);
   border-radius: 8px; color: var(--muted); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: border-color 0.12s, color 0.12s;
+  flex-shrink: 0; transition: border-color 0.12s, color 0.12s, background 0.12s;
 }
 .icon-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); }
 .icon-btn svg { width: 15px; height: 15px; }
+
+/* Think harder toggle */
+.think-btn { position: relative; }
+.think-btn.active {
+  border-color: var(--think-color); color: var(--think-color);
+  background: rgba(245,158,11,0.08);
+}
+.think-btn.active:hover { border-color: var(--think-color); color: var(--think-color); }
+.think-tooltip {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: #1c1c24; border: 1px solid var(--border); border-radius: 7px;
+  padding: 5px 9px; font-size: 11px; color: var(--muted); white-space: nowrap;
+  pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 10;
+}
+.think-btn:hover .think-tooltip { opacity: 1; }
+
 .send-btn {
   width: 32px; height: 32px; background: var(--purple); border: none;
   border-radius: 8px; color: #fff; cursor: pointer;
@@ -186,6 +264,15 @@ body {
 .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .send-btn svg { width: 15px; height: 15px; stroke: #fff; fill: none; }
 .input-hint { text-align: center; font-size: 11px; color: var(--muted); margin-top: 8px; max-width: 680px; margin-left: auto; margin-right: auto; }
+
+/* Paste overlay hint */
+.paste-hint {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--purple-soft);
+  border-radius: 10px; padding: 8px 16px; font-size: 12px; color: var(--purple-soft);
+  opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 50;
+}
+.paste-hint.show { opacity: 1; }
 
 /* GAME MODAL */
 .modal-overlay {
@@ -235,7 +322,7 @@ body {
 .game-tab:hover { color: var(--text); }
 .game-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
 
-/* RPS scoreboard */
+/* RPS */
 .rps-scoreboard {
   display: grid; grid-template-columns: 1fr auto 1fr;
   align-items: center; gap: 8px; margin-bottom: 14px;
@@ -327,7 +414,7 @@ body {
       <div class="status-dot"></div>
       <span class="topbar-name">Glitch</span>
     </div>
-    <span class="topbar-model">llama-4-scout · vision</span>
+    <span class="topbar-model" id="topbar-model">llama-4-scout · vision</span>
   </div>
 
   <div class="chat-area" id="chat-area">
@@ -346,6 +433,17 @@ body {
       <div class="input-row">
         <textarea id="user-input" placeholder="Message Glitch..." rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+
+        <!-- Think harder toggle -->
+        <button class="icon-btn think-btn" id="think-btn" title="Think harder" onclick="toggleThink()">
+          <div class="think-tooltip" id="think-tooltip">Think harder</div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+
+        <!-- Game -->
         <button class="icon-btn" title="Play a game with Glitch" onclick="openGameModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="6" width="20" height="12" rx="4"/>
@@ -354,6 +452,8 @@ body {
             <circle cx="18" cy="13" r="1" fill="currentColor" stroke="none"/>
           </svg>
         </button>
+
+        <!-- Attach image -->
         <label class="icon-btn" title="Attach image" style="cursor:pointer;">
           <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleImage(event)"/>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -362,6 +462,7 @@ body {
             <path d="M21 15l-5-5L5 21"/>
           </svg>
         </label>
+
         <button class="send-btn" id="send-btn" onclick="sendMessage()">
           <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -377,6 +478,9 @@ body {
     </div>
   </div>
 </div>
+
+<!-- Paste hint -->
+<div class="paste-hint" id="paste-hint">📋 Image pasted!</div>
 
 <!-- GAME MODAL -->
 <div class="modal-overlay" id="game-modal" onclick="closeGameModalOutside(event)">
@@ -440,14 +544,18 @@ let currentIndex = -1;
 let history = [];
 let pendingImages = [];
 let thinking = false;
+let thinkMode = false;
 
-const chatInner = document.getElementById("chat-inner");
-const chatArea  = document.getElementById("chat-area");
-const userInput = document.getElementById("user-input");
-const sendBtn   = document.getElementById("send-btn");
+const chatInner   = document.getElementById("chat-inner");
+const chatArea    = document.getElementById("chat-area");
+const userInput   = document.getElementById("user-input");
+const sendBtn     = document.getElementById("send-btn");
 const historyList = document.getElementById("history-list");
 const previewStrip = document.getElementById("preview-strip");
+const topbarModel  = document.getElementById("topbar-model");
+const thinkBtn     = document.getElementById("think-btn");
 
+/* ── avatars ── */
 function setAvatars() {
   document.querySelectorAll("#sidebar-avatar, #empty-avatar, .msg-meta-avatar.glitch-av").forEach(el => {
     const img = document.createElement("img");
@@ -468,6 +576,167 @@ function handleKey(e) {
 }
 function scrollBottom() { chatArea.scrollTop = chatArea.scrollHeight; }
 
+/* ── think harder toggle ── */
+function toggleThink() {
+  thinkMode = !thinkMode;
+  thinkBtn.classList.toggle("active", thinkMode);
+  document.getElementById("think-tooltip").textContent = thinkMode ? "Back to fast mode" : "Think harder";
+  updateTopbarModel();
+}
+function updateTopbarModel() {
+  if (thinkMode) {
+    topbarModel.textContent = "llama-3.3-70b · think mode";
+    topbarModel.classList.add("think-mode");
+  } else {
+    const hasImage = pendingImages.length > 0;
+    topbarModel.textContent = hasImage ? "llama-4-scout · vision" : "llama-3.1-8b · fast";
+    topbarModel.classList.remove("think-mode");
+  }
+}
+
+/* ── paste image from clipboard ── */
+document.addEventListener("paste", (e) => {
+  const items = Array.from(e.clipboardData?.items || []);
+  const imgItem = items.find(i => i.type.startsWith("image/"));
+  if (!imgItem) return;
+  e.preventDefault();
+  const file = imgItem.getAsFile();
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingImages.push({ base64: reader.result.split(",")[1], mime: file.type, dataUrl: reader.result });
+    renderPreviews();
+    const hint = document.getElementById("paste-hint");
+    hint.classList.add("show");
+    setTimeout(() => hint.classList.remove("show"), 1800);
+    updateTopbarModel();
+  };
+  reader.readAsDataURL(file);
+});
+
+/* ── markdown renderer ── */
+function renderMarkdown(text) {
+  // We'll build an HTML string from the text
+  const lines = text.split("\n");
+  let html = "";
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Fenced code block
+    const fenceMatch = line.match(/^```(\w*)$/);
+    if (fenceMatch) {
+      const lang = fenceMatch[1] || "code";
+      let code = "";
+      i++;
+      while (i < lines.length && !lines[i].startsWith("```")) {
+        code += lines[i] + "\n";
+        i++;
+      }
+      i++; // skip closing ```
+      const escaped = escHtml(code.trimEnd());
+      const id = "cb" + Math.random().toString(36).slice(2);
+      html += `<div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">${escHtml(lang)}</span>
+          <button class="copy-btn" onclick="copyCode('${id}',this)">Copy</button>
+        </div>
+        <pre><code class="block-code" id="${id}">${escaped}</code></pre>
+      </div>`;
+      continue;
+    }
+
+    // Headings
+    const h3 = line.match(/^### (.+)/);
+    if (h3) { html += `<h3>${inlineMd(h3[1])}</h3>`; i++; continue; }
+    const h2 = line.match(/^## (.+)/);
+    if (h2) { html += `<h2>${inlineMd(h2[1])}</h2>`; i++; continue; }
+    const h1 = line.match(/^# (.+)/);
+    if (h1) { html += `<h1>${inlineMd(h1[1])}</h1>`; i++; continue; }
+
+    // HR
+    if (/^---+$/.test(line.trim())) { html += "<hr>"; i++; continue; }
+
+    // Blockquote
+    if (line.startsWith("> ")) {
+      html += `<blockquote>${inlineMd(line.slice(2))}</blockquote>`; i++; continue;
+    }
+
+    // Unordered list
+    if (/^[\-\*] /.test(line)) {
+      html += "<ul>";
+      while (i < lines.length && /^[\-\*] /.test(lines[i])) {
+        html += `<li>${inlineMd(lines[i].replace(/^[\-\*] /, ""))}</li>`;
+        i++;
+      }
+      html += "</ul>";
+      continue;
+    }
+
+    // Ordered list
+    if (/^\d+\. /.test(line)) {
+      html += "<ol>";
+      while (i < lines.length && /^\d+\. /.test(lines[i])) {
+        html += `<li>${inlineMd(lines[i].replace(/^\d+\. /, ""))}</li>`;
+        i++;
+      }
+      html += "</ol>";
+      continue;
+    }
+
+    // Empty line = paragraph break
+    if (line.trim() === "") { html += "<br>"; i++; continue; }
+
+    // Regular paragraph line
+    html += `<p>${inlineMd(line)}</p>`;
+    i++;
+  }
+
+  return html;
+}
+
+function inlineMd(text) {
+  return escHtml(text)
+    // bold
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    // italic
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    // inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // links
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function copyCode(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1800);
+  });
+}
+
+/* ── image generation detection ── */
+function detectImageRequest(text) {
+  const lower = text.toLowerCase();
+  return /\b(generate|create|make|draw|paint|image of|picture of|show me|imagine)\b/.test(lower)
+    && /\b(image|picture|photo|illustration|artwork|painting|drawing|art)\b/.test(lower);
+}
+
+function extractImagePrompt(text) {
+  // Try to strip leading instruction words and return a clean prompt
+  return text
+    .replace(/^(generate|create|make|draw|paint|show me|imagine|can you|please)\s+(an?\s+)?(image|picture|photo|illustration|artwork|painting|drawing|art)\s+(of\s+)?/i, "")
+    .trim() || text;
+}
+
+/* ── avatar helper ── */
 function makeAvatarEl(isUser) {
   const av = document.createElement("div");
   av.className = "msg-meta-avatar" + (isUser ? "" : " glitch-av");
@@ -483,6 +752,7 @@ function makeAvatarEl(isUser) {
   return av;
 }
 
+/* ── add message to DOM ── */
 function addMessage(role, text, imageDataUrl) {
   document.getElementById("empty-state")?.remove();
   const isUser = role === "user";
@@ -503,16 +773,32 @@ function addMessage(role, text, imageDataUrl) {
     img.className = "msg-image";
     bubble.appendChild(img);
   }
-  const textNode = document.createElement("span");
-  textNode.textContent = text;
-  bubble.appendChild(textNode);
-  row.appendChild(meta);
-  row.appendChild(bubble);
-  chatInner.appendChild(row);
-  scrollBottom();
-  return textNode;
+  // For user messages keep plain text; for glitch render markdown
+  if (isUser) {
+    const textNode = document.createElement("span");
+    textNode.textContent = text;
+    bubble.appendChild(textNode);
+    row.appendChild(meta);
+    row.appendChild(bubble);
+    chatInner.appendChild(row);
+    scrollBottom();
+    return null; // user messages don't need live update handle
+  } else {
+    // glitch: we return the bubble itself for live streaming
+    row.appendChild(meta);
+    row.appendChild(bubble);
+    chatInner.appendChild(row);
+    scrollBottom();
+    return bubble;
+  }
 }
 
+/* Update glitch bubble content with markdown during streaming */
+function updateBubble(bubble, text) {
+  bubble.innerHTML = renderMarkdown(text);
+}
+
+/* ── image handling ── */
 function handleImage(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -520,6 +806,7 @@ function handleImage(e) {
   reader.onload = () => {
     pendingImages.push({ base64: reader.result.split(",")[1], mime: file.type, dataUrl: reader.result });
     renderPreviews();
+    updateTopbarModel();
   };
   reader.readAsDataURL(file);
   e.target.value = "";
@@ -534,12 +821,13 @@ function renderPreviews() {
     wrap.className = "image-thumb";
     const el = document.createElement("img"); el.src = img.dataUrl;
     const rm = document.createElement("button"); rm.textContent = "×";
-    rm.onclick = () => { pendingImages.splice(i, 1); renderPreviews(); };
+    rm.onclick = () => { pendingImages.splice(i, 1); renderPreviews(); updateTopbarModel(); };
     wrap.appendChild(el); wrap.appendChild(rm);
     previewStrip.appendChild(wrap);
   });
 }
 
+/* ── send message ── */
 async function sendMessage() {
   if (thinking) return;
   const text = userInput.value.trim();
@@ -547,43 +835,103 @@ async function sendMessage() {
   userInput.value = ""; userInput.style.height = "auto";
   sendBtn.disabled = true; thinking = true;
   const imgs = [...pendingImages]; pendingImages = []; renderPreviews();
+
   addMessage("user", text, imgs[0]?.dataUrl || null);
+
   const userContent = imgs.length
     ? [...imgs.map(img => ({ type: "image_url", image_url: { url: `data:${img.mime};base64,${img.base64}` } })), { type: "text", text: text || "What's in this image?" }]
     : text;
   history.push({ role: "user", content: userContent });
   if (history.length > 40) history = history.slice(-40);
+
   if (currentIndex === -1) {
     const title = text.length > 32 ? text.slice(0, 32) + "…" : (text || "Image");
     sessions.unshift({ title, history: [] });
     currentIndex = 0;
     saveAndRenderSidebar();
   }
-  const glitchText = addMessage("assistant", "");
+
+  // Check if this is an image generation request
+  if (!imgs.length && detectImageRequest(text)) {
+    await handleImageGeneration(text);
+    thinking = false; sendBtn.disabled = false; userInput.focus();
+    updateTopbarModel();
+    return;
+  }
+
+  // Normal chat
+  const bubble = addMessage("assistant", "");
   const cursor = document.createElement("span");
   cursor.className = "cursor";
-  glitchText.parentNode.insertBefore(cursor, glitchText.nextSibling);
+  bubble.appendChild(cursor);
   let reply = "";
+
   try {
-    const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ history }) });
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ history, think: thinkMode })
+    });
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       reply += decoder.decode(value, { stream: true });
-      glitchText.textContent = reply;
-      glitchText.parentNode.insertBefore(cursor, glitchText.nextSibling);
+      // Remove cursor before re-rendering
+      cursor.remove();
+      updateBubble(bubble, reply);
+      bubble.appendChild(cursor);
       scrollBottom();
     }
-  } catch(e) { reply = "(Something went wrong — try again)"; glitchText.textContent = reply; }
+  } catch(e) {
+    reply = "(Something went wrong — try again)";
+    updateBubble(bubble, reply);
+  }
+
   cursor.remove();
   history.push({ role: "assistant", content: reply });
   sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
   saveAndRenderSidebar();
   thinking = false; sendBtn.disabled = false; userInput.focus();
+  updateTopbarModel();
 }
 
+/* ── image generation flow ── */
+async function handleImageGeneration(text) {
+  const prompt = extractImagePrompt(text);
+  const bubble = addMessage("assistant", "");
+  bubble.innerHTML = `<span style="color:var(--muted);font-size:13px;">✨ Generating image…</span>`;
+
+  try {
+    const res = await fetch("/imagine", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const reply = `Here's your image for: *${prompt}*`;
+    bubble.innerHTML = renderMarkdown(reply);
+    const img = document.createElement("img");
+    img.src = data.url;
+    img.className = "gen-image";
+    img.alt = prompt;
+    img.title = "Click to open full size";
+    img.onclick = () => window.open(data.url, "_blank");
+    bubble.appendChild(img);
+
+    history.push({ role: "assistant", content: reply });
+    sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
+    saveAndRenderSidebar();
+  } catch(e) {
+    bubble.innerHTML = `<span style="color:var(--danger);">Couldn't generate image: ${e.message}</span>`;
+  }
+  scrollBottom();
+}
+
+/* ── sidebar ── */
 function saveAndRenderSidebar() {
   localStorage.setItem("glitch_sessions", JSON.stringify(sessions.slice(0, 30)));
   renderSidebar();
@@ -624,7 +972,16 @@ function renderSidebar() {
 function loadSession(i) {
   currentIndex = i; history = [...sessions[i].history];
   chatInner.innerHTML = "";
-  history.forEach(m => { if (typeof m.content === "string") addMessage(m.role, m.content); });
+  history.forEach(m => {
+    if (typeof m.content === "string") {
+      if (m.role === "assistant") {
+        const bubble = addMessage(m.role, "");
+        updateBubble(bubble, m.content);
+      } else {
+        addMessage(m.role, m.content);
+      }
+    }
+  });
   renderSidebar(); scrollBottom();
 }
 
@@ -635,11 +992,13 @@ function newChat() {
   es.className = "empty-state"; es.id = "empty-state";
   es.innerHTML = `<div class="empty-avatar" id="empty-avatar">G</div><h2>Hey, I'm Glitch.</h2><p>What's on your mind?</p>`;
   chatInner.appendChild(es); setAvatars(); renderSidebar(); userInput.focus();
+  updateTopbarModel();
 }
 
 renderSidebar();
+updateTopbarModel();
 
-/* GAME MODAL */
+/* ── GAME MODAL ── */
 function openGameModal() { document.getElementById("game-modal").classList.add("open"); }
 function closeGameModal() { document.getElementById("game-modal").classList.remove("open"); }
 function closeGameModalOutside(e) { if (e.target === document.getElementById("game-modal")) closeGameModal(); }
@@ -658,31 +1017,9 @@ function switchGame(game) {
 let rpsYou = 0, rpsGlitch = 0, rpsTotal = 0;
 const rpsChoices = ["rock", "scissors", "paper"];
 const rpsEmoji = { rock: "✊", paper: "✋", scissors: "✌️" };
-const rpsWinQuips  = [
-  "wait WHAT 😭 okay that's fair",
-  "no way... lucky shot 👀",
-  "ugh fine you win this one 😤",
-  "okay I respect it but just this once",
-  "how do you keep doing that 😭",
-  "bold move it worked annoying",
-  "I was not ready for that at all",
-];
-const rpsLoseQuips = [
-  "called it 😌 too easy",
-  "heh I'm just built different",
-  "knew you'd pick that 👀",
-  "not even trying at this point lol",
-  "one step ahead always 😌",
-  "honestly? saw that coming a mile away",
-  "you walked right into that one",
-];
-const rpsTieQuips = [
-  "okay we're literally the same person",
-  "a tie really come on",
-  "we need to stop thinking alike lol",
-  "are you copying me??",
-  "this is getting weird",
-];
+const rpsWinQuips  = ["wait WHAT 😭 okay that's fair","no way... lucky shot 👀","ugh fine you win this one 😤","okay I respect it but just this once","how do you keep doing that 😭","bold move it worked annoying","I was not ready for that at all"];
+const rpsLoseQuips = ["called it 😌 too easy","heh I'm just built different","knew you'd pick that 👀","not even trying at this point lol","one step ahead always 😌","honestly? saw that coming a mile away","you walked right into that one"];
+const rpsTieQuips  = ["okay we're literally the same person","a tie really come on","we need to stop thinking alike lol","are you copying me??","this is getting weird"];
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -691,30 +1028,19 @@ function playRPS(userChoice) {
   rpsTotal++;
   let outcome;
   if (userChoice === glitchChoice) { outcome = "tie"; }
-  else if (
-    (userChoice==="rock"&&glitchChoice==="scissors") ||
-    (userChoice==="paper"&&glitchChoice==="rock") ||
-    (userChoice==="scissors"&&glitchChoice==="paper")
-  ) { outcome = "win"; rpsYou++; }
+  else if ((userChoice==="rock"&&glitchChoice==="scissors")||(userChoice==="paper"&&glitchChoice==="rock")||(userChoice==="scissors"&&glitchChoice==="paper")) { outcome = "win"; rpsYou++; }
   else { outcome = "lose"; rpsGlitch++; }
-
   document.getElementById("rps-you").textContent = rpsYou;
   document.getElementById("rps-glitch").textContent = rpsGlitch;
-
   let quip = outcome==="win" ? pick(rpsWinQuips) : outcome==="lose" ? pick(rpsLoseQuips) : pick(rpsTieQuips);
   if (rpsTotal >= 4 && rpsYou >= 3) quip = `you've beaten me ${rpsYou} times now... suspicious 👀`;
   else if (rpsTotal >= 4 && rpsGlitch >= 3) quip = `${rpsGlitch} wins for me not that I'm counting`;
-
   const label = outcome==="win" ? "you win 🎉" : outcome==="lose" ? "glitch wins 😌" : "it's a tie 🤝";
   document.getElementById("rps-result").innerHTML =
-    `<div class="rps-result-inner">
-      <div class="rps-emojis">${rpsEmoji[userChoice]} ${rpsEmoji[glitchChoice]}</div>
-      <div class="rps-outcome">${label}</div>
-      <div class="rps-quip">${quip}</div>
-    </div>`;
+    `<div class="rps-result-inner"><div class="rps-emojis">${rpsEmoji[userChoice]} ${rpsEmoji[glitchChoice]}</div><div class="rps-outcome">${label}</div><div class="rps-quip">${quip}</div></div>`;
 }
 
-/* CONNECT 4 */
+/* Connect 4 */
 const ROWS=6, COLS=7;
 let c4Board, c4Turn, c4Over;
 function initC4() {
