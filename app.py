@@ -58,14 +58,48 @@ def needs_search(user_message):
         return None
 
 
+SEARX_INSTANCES = [
+    "https://searx.be",
+    "https://search.bus-hit.me",
+    "https://searxng.world",
+]
+
 def web_search(query, max_results=5):
+    # Try duckduckgo_search first
     try:
         from duckduckgo_search import DDGS
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=max_results))
-        return results
-    except Exception as e:
-        return [{"title": "Search unavailable", "body": str(e), "href": ""}]
+        if results:
+            return results
+    except Exception:
+        pass
+
+    # Fallback: try public SearXNG instances
+    for base in SEARX_INSTANCES:
+        try:
+            resp = req_lib.get(
+                f"{base}/search",
+                params={"q": query, "format": "json", "categories": "general"},
+                timeout=5,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; Glitch-bot/1.0)"}
+            )
+            data = resp.json()
+            results = [
+                {
+                    "title": r.get("title", ""),
+                    "body":  r.get("content", ""),
+                    "href":  r.get("url", "")
+                }
+                for r in data.get("results", [])[:max_results]
+                if r.get("content")
+            ]
+            if results:
+                return results
+        except Exception:
+            continue
+
+    return []  # caller handles empty
 
 
 def format_search_results(results):
@@ -126,19 +160,27 @@ def chat():
             if search_query:
                 yield f"§SEARCH:{search_query}§\n"
                 results        = web_search(search_query)
-                search_context = format_search_results(results)
+                search_context = format_search_results(results) if results else ""
 
             # Build system prompt — inject search results if available
             system = PERSONALITY
+            today_str = date.today().strftime("%B %d, %Y")
             if search_context:
                 system += (
                     f"\n\n[Web search results for '{search_query}']\n"
                     f"{search_context}\n"
                     "[End of search results]\n\n"
-                    f"Today is {date.today().strftime('%B %d, %Y')}. "
+                    f"Today is {today_str}. "
                     "IMPORTANT: You have real web search results above. "
                     "You MUST answer using these results — do NOT say you lack real-time information. "
                     "Be direct and factual. Cite the source URL when helpful."
+                )
+            elif search_query:
+                # Search ran but returned nothing
+                system += (
+                    f"\n\nToday is {today_str}. "
+                    f"A web search for '{search_query}' returned no results. "
+                    "Answer from your training knowledge and be upfront that you couldn't fetch live data."
                 )
 
             messages = [{"role": "system", "content": system}] + history
