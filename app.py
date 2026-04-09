@@ -65,17 +65,11 @@ PERSONALITY = load_personality()
 
 
 def select_model(user_message, has_image, think):
-    # Scout handles all chat — vision, normal, and think mode
-    # Only use 8B for very short casual messages to save tokens
-    if not has_image and len(user_message) < 40 and not think:
-        return TEXT_MODEL
     return SCOUT_MODEL
 
 
 def get_max_tokens(model, think):
-    if model == SCOUT_MODEL:
-        return 768 if think else 512
-    return 384  # TEXT_MODEL
+    return 768 if think else 512
 
 
 # ── Local search pre-filter ──────────────────────────────────────────────────
