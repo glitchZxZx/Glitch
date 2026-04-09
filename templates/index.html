@@ -422,6 +422,32 @@ body {
 .game-new-btn:hover { border-color: var(--purple-soft); color: var(--text); }
 
 @media (max-width: 600px) { .sidebar { display: none; } }
+
+.sidebar-footer {
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.status-link {
+  display: flex; align-items: center; gap: 7px;
+  text-decoration: none; color: var(--muted); font-size: 12px;
+  padding: 7px 8px; border-radius: 8px;
+  transition: background 0.12s, color 0.12s;
+}
+.status-link:hover { background: var(--surface2); color: var(--text); }
+.status-indicator {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #4ade80; flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(74,222,128,0.5);
+  animation: status-pulse 2.5s ease-in-out infinite;
+}
+.status-indicator.degraded { background: #f59e0b; box-shadow: 0 0 0 0 rgba(245,158,11,0.5); }
+.status-indicator.down { background: #e24b4a; box-shadow: 0 0 0 0 rgba(226,75,74,0.5); animation: none; }
+@keyframes status-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.55); }
+  60%  { box-shadow: 0 0 0 5px rgba(74,222,128,0); }
+  100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+}
 </style>
 </head>
 <body>
@@ -437,6 +463,12 @@ body {
   </button>
   <div class="history-label">Recent</div>
   <div class="history-list" id="history-list"></div>
+  <div class="sidebar-footer">
+    <a href="https://stats.uptimerobot.com/tKeBHHLwk5" target="_blank" class="status-link" id="status-link" title="View status page">
+      <span class="status-indicator" id="status-indicator"></span>
+      <span id="status-label">All systems operational</span>
+    </a>
+  </div>
 </div>
 
 <div class="main">
@@ -1126,7 +1158,31 @@ function c4Highlight(cells){
 function c4IsFull(){return c4Board[0].every(c=>c!==0);}
 initC4();
 
-function resetCurrentGame(){
+// Status page fetch
+(async function fetchStatus() {
+  try {
+    const res = await fetch("https://stats.uptimerobot.com/api/getMonitorList/tKeBHHLwk5");
+    const data = await res.json();
+    const monitors = data?.statistics?.monitors || [];
+    const anyDown     = monitors.some(m => m.status === 9);  // down
+    const anyDegraded = monitors.some(m => m.status === 8);  // seems down
+    const dot   = document.getElementById("status-indicator");
+    const label = document.getElementById("status-label");
+    if (anyDown) {
+      dot.className = "status-indicator down";
+      label.textContent = "Service disruption";
+    } else if (anyDegraded) {
+      dot.className = "status-indicator degraded";
+      label.textContent = "Partial outage";
+    } else {
+      dot.className = "status-indicator";
+      label.textContent = "All systems operational";
+    }
+  } catch {
+    // silently fail — keep green dot as default
+  }
+})();
+
   if(currentGame==="rps"){
     rpsYou=0;rpsGlitch=0;rpsTotal=0;
     document.getElementById("rps-you").textContent="0";
