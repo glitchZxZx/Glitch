@@ -22,24 +22,35 @@ def load_personality():
 
 PERSONALITY = load_personality()
 
-SEARCH_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "web_search",
-        "description": (
-            "Search the web for current information. Use this for recent news, events, "
-            "prices, weather, sports scores, or anything requiring up-to-date data. "
-            "Do NOT use for general knowledge or things you already know well."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "A concise search query"}
-            },
-            "required": ["query"]
-        }
-    }
-}
+
+def needs_search(user_message):
+    """Ask the fast model if this needs a web search. Returns query string or None."""
+    try:
+        resp = client.chat.completions.create(
+            model=TEXT_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You decide if a question needs a real-time web search to answer accurately. "
+                        "This includes: current news, live scores, today's weather, recent events, "
+                        "current prices, stock values, or anything that changes frequently. "
+                        "If yes, reply exactly: SEARCH: <concise query> "
+                        "If no, reply exactly: NO "
+                        "Nothing else. No explanation."
+                    )
+                },
+                {"role": "user", "content": user_message}
+            ],
+            max_tokens=25
+        )
+        result = resp.choices[0].message.content.strip()
+        if result.upper().startswith("SEARCH:"):
+            return result[7:].strip()
+        return None
+    except Exception:
+        return None
+
 
 def web_search(query, max_results=5):
     try:
@@ -49,6 +60,7 @@ def web_search(query, max_results=5):
         return results
     except Exception as e:
         return [{"title": "Search unavailable", "body": str(e), "href": ""}]
+
 
 def format_search_results(results):
     parts = []
@@ -89,83 +101,50 @@ def chat():
     else:
         model = THINK_MODEL if think else TEXT_MODEL
 
-    messages = [{"role": "system", "content": PERSONALITY}] + history
+    # Get last user message (text only) for search decision
+    last_user_msg = ""
+    for m in reversed(history):
+        if m["role"] == "user" and isinstance(m.get("content"), str):
+            last_user_msg = m["content"]
+            break
 
     def generate():
         try:
-            # First pass — check if model wants to search
-            resp = client.chat.completions.create(
+            search_context = ""
+            search_query   = None
+
+            # Only check for search on text messages
+            if last_user_msg and not has_image:
+                search_query = needs_search(last_user_msg)
+
+            if search_query:
+                yield f"§SEARCH:{search_query}§\n"
+                results        = web_search(search_query)
+                search_context = format_search_results(results)
+
+            # Build system prompt — inject search results if available
+            system = PERSONALITY
+            if search_context:
+                system += (
+                    f"\n\n[Web search results for '{search_query}']\n"
+                    f"{search_context}\n"
+                    "[End of search results]\n\n"
+                    "Use the above results to give an accurate, up-to-date answer. "
+                    "Mention sources/URLs when relevant."
+                )
+
+            messages = [{"role": "system", "content": system}] + history
+
+            stream = client.chat.completions.create(
                 model=model,
                 messages=messages,
-                tools=[SEARCH_TOOL],
-                tool_choice="auto",
+                stream=True,
                 max_tokens=2048 if think else 1024
             )
-
-            msg = resp.choices[0].message
-
-            if msg.tool_calls:
-                tool_messages = []
-                for tc in msg.tool_calls:
-                    if tc.function.name == "web_search":
-                        args  = json.loads(tc.function.arguments)
-                        query = args.get("query", "")
-
-                        # Signal the frontend to show search pill
-                        yield f"§SEARCH:{query}§\n"
-
-                        results      = web_search(query)
-                        results_text = format_search_results(results)
-
-                        tool_messages.append({
-                            "role": "tool",
-                            "tool_call_id": tc.id,
-                            "content": results_text
-                        })
-
-                assistant_msg = {
-                    "role": "assistant",
-                    "content": msg.content,
-                    "tool_calls": [
-                        {
-                            "id": tc.id,
-                            "type": "function",
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments
-                            }
-                        }
-                        for tc in msg.tool_calls
-                    ]
-                }
-
-                messages2 = messages + [assistant_msg] + tool_messages
-
-                stream = client.chat.completions.create(
-                    model=model,
-                    messages=messages2,
-                    stream=True,
-                    max_tokens=2048
-                )
-                for chunk in stream:
-                    content = chunk.choices[0].delta.content
-                    if content:
-                        yield content
-
-            elif msg.content:
-                yield msg.content
-
-            else:
-                stream = client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    stream=True,
-                    max_tokens=2048 if think else 1024
-                )
-                for chunk in stream:
-                    content = chunk.choices[0].delta.content
-                    if content:
-                        yield content
+            for chunk in stream:
+                content = chunk.choices[0].delta.content
+                if content:
+                    yield content
 
         except Exception as e:
             yield f"(Error: {e})"
