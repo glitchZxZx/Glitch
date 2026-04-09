@@ -423,31 +423,63 @@ body {
 
 @media (max-width: 600px) { .sidebar { display: none; } }
 
-.sidebar-footer {
-  padding: 10px 14px 14px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
+/* Sidebar footer + status */
+.sidebar-footer { padding: 10px 12px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
 .status-link {
-  display: flex; align-items: center; gap: 7px;
-  text-decoration: none; color: var(--muted); font-size: 12px;
-  padding: 7px 8px; border-radius: 8px;
+  display: flex; align-items: center; gap: 7px; text-decoration: none;
+  color: var(--muted); font-size: 12px; padding: 6px 8px; border-radius: 8px;
   transition: background 0.12s, color 0.12s;
 }
 .status-link:hover { background: var(--surface2); color: var(--text); }
 .status-indicator {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #4ade80; flex-shrink: 0;
-  box-shadow: 0 0 0 0 rgba(74,222,128,0.5);
+  width: 7px; height: 7px; border-radius: 50%; background: #4ade80; flex-shrink: 0;
   animation: status-pulse 2.5s ease-in-out infinite;
 }
-.status-indicator.degraded { background: #f59e0b; box-shadow: 0 0 0 0 rgba(245,158,11,0.5); }
-.status-indicator.down { background: #e24b4a; box-shadow: 0 0 0 0 rgba(226,75,74,0.5); animation: none; }
+.status-indicator.degraded { background: #f59e0b; }
+.status-indicator.down { background: var(--danger); animation: none; }
 @keyframes status-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.55); }
+  0%   { box-shadow: 0 0 0 0 rgba(74,222,128,.55); }
   60%  { box-shadow: 0 0 0 5px rgba(74,222,128,0); }
   100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
 }
+
+/* Username modal */
+.username-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; backdrop-filter: blur(4px); opacity: 0;
+  transition: opacity 0.2s; pointer-events: none;
+}
+.username-overlay.open { opacity: 1; pointer-events: all; }
+.username-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 32px 28px; max-width: 360px; width: 90%;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  transform: translateY(12px); transition: transform 0.2s;
+}
+.username-overlay.open .username-card { transform: translateY(0); }
+.username-card-avatar {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--purple); overflow: hidden;
+  border: 2px solid rgba(124,110,240,.35);
+}
+.username-card-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.username-card h2 { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+.username-card p { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; }
+.username-input {
+  width: 100%; padding: 10px 14px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text); font-size: 14px; outline: none; font-family: inherit;
+  transition: border-color 0.15s;
+}
+.username-input:focus { border-color: var(--purple); }
+.username-submit {
+  width: 100%; padding: 10px; background: var(--purple); border: none;
+  border-radius: 10px; color: #fff; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.username-submit:hover { background: #6a5de0; }
+.username-error { font-size: 12px; color: var(--danger); display: none; }
 </style>
 </head>
 <body>
@@ -464,10 +496,22 @@ body {
   <div class="history-label">Recent</div>
   <div class="history-list" id="history-list"></div>
   <div class="sidebar-footer">
-    <a href="https://stats.uptimerobot.com/tKeBHHLwk5" target="_blank" class="status-link" id="status-link" title="View status page">
+    <a href="https://stats.uptimerobot.com/tKeBHHLwk5" target="_blank" class="status-link" title="Status page">
       <span class="status-indicator" id="status-indicator"></span>
       <span id="status-label">All systems operational</span>
     </a>
+  </div>
+</div>
+
+<!-- Username modal -->
+<div class="username-overlay" id="username-overlay">
+  <div class="username-card">
+    <div class="username-card-avatar" id="username-modal-avatar"></div>
+    <h2>Hey there 👋</h2>
+    <p>Pick a username so Glitch remembers you, even if you switch browsers.</p>
+    <input class="username-input" id="username-input" type="text" maxlength="32" placeholder="Your name..." autocomplete="off" />
+    <span class="username-error" id="username-error">That name didn't work — try another.</span>
+    <button class="username-submit" id="username-submit" onclick="submitUsername()">Let's go</button>
   </div>
 </div>
 
@@ -635,12 +679,12 @@ const topbarModel  = document.getElementById("topbar-model");
 const thinkBtn     = document.getElementById("think-btn");
 
 function setAvatars() {
-  document.querySelectorAll("#sidebar-avatar, #empty-avatar, .msg-meta-avatar.glitch-av").forEach(el => {
-    const img = document.createElement("img");
+  document.querySelectorAll("#sidebar-avatar, #empty-avatar, #username-modal-avatar, .msg-meta-avatar.glitch-av").forEach(el => {
+    if (el.querySelector("img")) return; // already set
+    const img = new Image();
     img.src = AVATAR_URL;
-    img.onerror = () => img.remove();
-    el.textContent = "";
-    el.appendChild(img);
+    img.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:50%;";
+    img.onload = () => { el.textContent = ""; el.appendChild(img); };
   });
 }
 setAvatars();
@@ -1158,14 +1202,93 @@ function c4Highlight(cells){
 function c4IsFull(){return c4Board[0].every(c=>c!==0);}
 initC4();
 
-// Status page fetch
+function resetCurrentGame(){
+  if(currentGame==="rps"){
+    rpsYou=0;rpsGlitch=0;rpsTotal=0;
+    document.getElementById("rps-you").textContent="0";
+    document.getElementById("rps-glitch").textContent="0";
+    document.getElementById("rps-result").innerHTML='<span class="rps-prompt">pick your move 👇</span>';
+  } else { initC4(); }
+}
+
+// ── Username system ─────────────────────────────────────────────────────────
+let currentUsername = "";
+
+async function initUsername() {
+  try {
+    const res = await fetch("/api/username");
+    const data = await res.json();
+    if (data.username) {
+      currentUsername = data.username;
+      applyUsername();
+    } else {
+      showUsernameModal();
+    }
+  } catch {
+    showUsernameModal();
+  }
+}
+
+function showUsernameModal() {
+  setAvatars(); // populate avatar inside modal
+  document.getElementById("username-overlay").classList.add("open");
+  setTimeout(() => document.getElementById("username-input").focus(), 200);
+}
+
+function applyUsername() {
+  document.getElementById("username-overlay").classList.remove("open");
+  // Show username in sidebar header subtitle if desired
+  const existing = document.getElementById("sidebar-username");
+  if (!existing && currentUsername) {
+    const span = document.createElement("span");
+    span.id = "sidebar-username";
+    span.style.cssText = "font-size:11px;color:var(--muted);margin-top:-2px;";
+    span.textContent = currentUsername;
+    document.querySelector(".sidebar-header").appendChild(span);
+  }
+}
+
+async function submitUsername() {
+  const input = document.getElementById("username-input");
+  const errEl = document.getElementById("username-error");
+  const name = input.value.trim();
+  if (!name) { input.focus(); return; }
+  const btn = document.getElementById("username-submit");
+  btn.textContent = "Saving..."; btn.disabled = true;
+  try {
+    const res = await fetch("/api/username", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: name })
+    });
+    const data = await res.json();
+    if (data.username) {
+      currentUsername = data.username;
+      errEl.style.display = "none";
+      applyUsername();
+    } else {
+      errEl.style.display = "block";
+    }
+  } catch {
+    errEl.style.display = "block";
+  }
+  btn.textContent = "Let's go"; btn.disabled = false;
+}
+
+document.getElementById("username-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") submitUsername();
+});
+
+initUsername();
+
+// ── Status page fetch ────────────────────────────────────────────────────────
 (async function fetchStatus() {
   try {
     const res = await fetch("https://stats.uptimerobot.com/api/getMonitorList/tKeBHHLwk5");
     const data = await res.json();
     const monitors = data?.statistics?.monitors || [];
-    const anyDown     = monitors.some(m => m.status === 9);  // down
-    const anyDegraded = monitors.some(m => m.status === 8);  // seems down
+    const anyDown     = monitors.some(m => m.status === 9);
+    const anyDegraded = monitors.some(m => m.status === 8);
     const dot   = document.getElementById("status-indicator");
     const label = document.getElementById("status-label");
     if (anyDown) {
@@ -1174,22 +1297,10 @@ initC4();
     } else if (anyDegraded) {
       dot.className = "status-indicator degraded";
       label.textContent = "Partial outage";
-    } else {
-      dot.className = "status-indicator";
-      label.textContent = "All systems operational";
     }
-  } catch {
-    // silently fail — keep green dot as default
-  }
+    // else: default green "All systems operational"
+  } catch { /* silently fail */ }
 })();
-
-  if(currentGame==="rps"){
-    rpsYou=0;rpsGlitch=0;rpsTotal=0;
-    document.getElementById("rps-you").textContent="0";
-    document.getElementById("rps-glitch").textContent="0";
-    document.getElementById("rps-result").innerHTML='<span class="rps-prompt">pick your move 👇</span>';
-  } else { initC4(); }
-}
 </script>
 </body>
 </html>

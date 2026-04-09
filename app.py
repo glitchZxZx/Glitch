@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, Response, stream_with_context
 from groq import Groq
 import os
 import re
+import json
 import requests as req_lib
 from urllib.parse import quote
 from datetime import date
@@ -10,6 +11,25 @@ from collections import deque
 
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+# Simple IP → username store (in-memory, survives restarts via JSON file)
+USERNAME_FILE = "usernames.json"
+
+def _load_usernames():
+    try:
+        with open(USERNAME_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_usernames(d):
+    try:
+        with open(USERNAME_FILE, "w") as f:
+            json.dump(d, f)
+    except Exception:
+        pass
+
+_usernames: dict = _load_usernames()
 
 # Per-IP rate limit: max 20 requests per 60 seconds
 RATE_LIMIT = 20
@@ -173,6 +193,28 @@ def format_search_results(results):
         href  = r.get("href", "")
         parts.append(f"Title: {title}\nSummary: {body}\nURL: {href}")
     return "\n\n---\n\n".join(parts)
+
+
+@app.route("/api/username", methods=["GET"])
+def get_username():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    return jsonify({"username": _usernames.get(ip, "")})
+
+@app.route("/api/username", methods=["POST"])
+def set_username():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    data = request.get_json()
+    name = (data.get("username") or "").strip()[:32]
+    if not name:
+        return jsonify({"error": "empty"}), 400
+    # Sanitize: alphanumeric + spaces + a few symbols
+    import re as _re
+    name = _re.sub(r"[^\w\s\-\.!]", "", name)[:32].strip()
+    if not name:
+        return jsonify({"error": "invalid"}), 400
+    _usernames[ip] = name
+    _save_usernames(_usernames)
+    return jsonify({"username": name})
 
 
 @app.route("/")
