@@ -588,11 +588,10 @@ let currentIndex = -1;
 let history = [];
 let pendingImages = [];
 let thinking = false;
-let thinkMode = true;
+let thinkMode = false;
 
 // init think mode UI
-document.getElementById("think-btn").classList.add("active");
-document.getElementById("think-tooltip").textContent = "Back to fast mode";
+document.getElementById("think-tooltip").textContent = "Think harder";
 
 const chatInner   = document.getElementById("chat-inner");
 const chatArea    = document.getElementById("chat-area");
@@ -859,7 +858,7 @@ async function sendMessage() {
     ? [...imgs.map(img => ({ type: "image_url", image_url: { url: `data:${img.mime};base64,${img.base64}` } })), { type: "text", text: text || "What's in this image?" }]
     : text;
   history.push({ role: "user", content: userContent });
-  if (history.length > 40) history = history.slice(-40);
+  if (history.length > 20) history = history.slice(-20);
 
   if (currentIndex === -1) {
     const title = text.length > 32 ? text.slice(0, 32) + "…" : (text || "Image");

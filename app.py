@@ -6,9 +6,27 @@ import requests as req_lib
 from urllib.parse import quote
 from datetime import date
 import time
+from collections import deque
 
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+# Per-IP rate limit: max 20 requests per 60 seconds
+RATE_LIMIT = 20
+RATE_WINDOW = 60
+_rate_store: dict[str, deque] = {}
+
+def is_rate_limited(ip: str) -> bool:
+    now = time.time()
+    if ip not in _rate_store:
+        _rate_store[ip] = deque()
+    dq = _rate_store[ip]
+    while dq and now - dq[0] > RATE_WINDOW:
+        dq.popleft()
+    if len(dq) >= RATE_LIMIT:
+        return True
+    dq.append(now)
+    return False
 
 VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 TEXT_MODEL   = "llama-3.1-8b-instant"
@@ -141,10 +159,18 @@ def imprint():
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    if is_rate_limited(ip):
+        return Response("You're sending messages too fast — slow down a bit 🙂", mimetype="text/plain", status=429)
+
     data      = request.get_json()
     history   = data.get("history", [])
     think     = data.get("think", False)  # Default to False to save tokens
     has_image = any(isinstance(m.get("content"), list) for m in history)
+
+    # Trim history server-side to last 10 exchanges (20 messages) to save tokens
+    if len(history) > 20:
+        history = history[-20:]
 
     # Get last user message (text only) for search decision
     last_user_msg = ""
@@ -265,7 +291,7 @@ def print_banner():
  ██    ██ ██      ██    ██    ██      ██   ██
   ██████  ███████ ██    ██     ██████ ██   ██
 \033[0m
-  \033[90mv1.1 · optimized · scout + 8b + 70b · lower token usage\033[0m
+  \033[90mv1.2 · rate-limited · smart routing · token-efficient\033[0m
 """)
 
 if __name__ == "__main__":
