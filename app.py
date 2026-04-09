@@ -5,12 +5,14 @@ import json
 import requests as req_lib
 from urllib.parse import quote
 from datetime import date
+import time
 
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 TEXT_MODEL   = "llama-3.1-8b-instant"
+SCOUT_MODEL  = "meta-llama/llama-4-scout-17b-16e-instruct"  # Try scout for general text
 THINK_MODEL  = "llama-3.3-70b-versatile"
 
 def load_personality():
@@ -22,6 +24,32 @@ def load_personality():
         return "You are a helpful assistant named Glitch."
 
 PERSONALITY = load_personality()
+
+
+def select_model(user_message, has_image, think):
+    """Smart model selection to optimize tokens and avoid rate limits."""
+    if has_image:
+        return VISION_MODEL
+    
+    # For short/casual messages, use the light 8B model
+    if len(user_message) < 50 and not think:
+        return TEXT_MODEL
+    
+    # For medium complexity, use scout (17B middle ground)
+    if len(user_message) < 300 and not think:
+        return SCOUT_MODEL
+    
+    # Only use 70B when thinking is explicitly requested
+    return THINK_MODEL if think else SCOUT_MODEL
+
+
+def get_max_tokens(model, think):
+    """Return appropriate token limit based on model and thinking mode."""
+    if model == THINK_MODEL:
+        return 768
+    if model == SCOUT_MODEL:
+        return 512
+    return 384  # TEXT_MODEL for short responses
 
 
 def needs_search(user_message):
@@ -56,7 +84,8 @@ def needs_search(user_message):
         return None
 
 
-def web_search(query, max_results=5):
+def web_search(query, max_results=3):
+    """Search the web with rate limit handling."""
     try:
         api_key = os.environ.get("TAVILY_API_KEY")
         resp = req_lib.post(
@@ -64,7 +93,7 @@ def web_search(query, max_results=5):
             json={
                 "api_key": api_key,
                 "query": query,
-                "max_results": max_results,
+                "max_results": max_results,  # Reduced from 5 to 3
                 "search_depth": "basic"
             },
             timeout=8
@@ -83,10 +112,11 @@ def web_search(query, max_results=5):
 
 
 def format_search_results(results):
+    """Format search results more concisely."""
     parts = []
-    for r in results[:5]:
+    for r in results[:3]:  # Only use top 3
         title = r.get("title", "")
-        body  = r.get("body", "")
+        body  = r.get("body", "")[:150]  # Truncate each result
         href  = r.get("href", "")
         parts.append(f"Title: {title}\nSummary: {body}\nURL: {href}")
     return "\n\n---\n\n".join(parts)
@@ -113,13 +143,8 @@ def imprint():
 def chat():
     data      = request.get_json()
     history   = data.get("history", [])
-    think     = data.get("think", True)
+    think     = data.get("think", False)  # Default to False to save tokens
     has_image = any(isinstance(m.get("content"), list) for m in history)
-
-    if has_image:
-        model = VISION_MODEL
-    else:
-        model = THINK_MODEL if think else TEXT_MODEL
 
     # Get last user message (text only) for search decision
     last_user_msg = ""
@@ -127,6 +152,10 @@ def chat():
         if m["role"] == "user" and isinstance(m.get("content"), str):
             last_user_msg = m["content"]
             break
+
+    # Select model based on message complexity
+    model = select_model(last_user_msg, has_image, think)
+    max_tokens = get_max_tokens(model, think)
 
     def generate():
         try:
@@ -139,7 +168,7 @@ def chat():
 
             if search_query:
                 yield f"§SEARCH:{search_query}§\n"
-                results        = web_search(search_query)
+                results        = web_search(search_query, max_results=3)
                 search_context = format_search_results(results) if results else ""
 
             # Build system prompt — inject search results if available
@@ -169,7 +198,7 @@ def chat():
                 model=model,
                 messages=messages,
                 stream=True,
-                max_tokens=2048 if think else 1024
+                max_tokens=max_tokens
             )
             for chunk in stream:
                 content = chunk.choices[0].delta.content
@@ -177,7 +206,12 @@ def chat():
                     yield content
 
         except Exception as e:
-            yield f"(Error: {e})"
+            # Handle rate limits gracefully
+            error_msg = str(e)
+            if "429" in error_msg or "rate_limit" in error_msg.lower():
+                yield f"(Rate limited — try again in a moment)"
+            else:
+                yield f"(Error: {e})"
 
     return Response(stream_with_context(generate()), mimetype="text/plain")
 
@@ -231,7 +265,7 @@ def print_banner():
  ██    ██ ██      ██    ██    ██      ██   ██
   ██████  ███████ ██    ██     ██████ ██   ██
 \033[0m
-  \033[90mv1.0 · flask · groq · duckduckgo\033[0m
+  \033[90mv1.1 · optimized · scout + 8b + 70b · lower token usage\033[0m
 """)
 
 if __name__ == "__main__":
