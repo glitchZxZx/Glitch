@@ -296,6 +296,13 @@ body {
 .send-btn svg { width: 15px; height: 15px; stroke: #fff; fill: none; }
 .input-hint { text-align: center; font-size: 11px; color: var(--muted); margin-top: 8px; max-width: 680px; margin-left: auto; margin-right: auto; }
 
+.search-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; color: var(--purple-soft);
+  background: rgba(124,110,240,0.08); border: 1px solid rgba(124,110,240,0.25);
+  border-radius: 20px; padding: 3px 10px; margin-bottom: 8px;
+}
+
 /* Paste overlay hint */
 .paste-hint {
   position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
@@ -586,7 +593,11 @@ let currentIndex = -1;
 let history = [];
 let pendingImages = [];
 let thinking = false;
-let thinkMode = false;
+let thinkMode = true;
+
+// init think mode UI
+document.getElementById("think-btn").classList.add("active");
+document.getElementById("think-tooltip").textContent = "Back to fast mode";
 
 const chatInner   = document.getElementById("chat-inner");
 const chatArea    = document.getElementById("chat-area");
@@ -872,6 +883,9 @@ async function sendMessage() {
   cursor.className = "cursor";
   bubble.appendChild(cursor);
   let reply = "";
+  let searchPill = null;
+  let rawBuffer = "";
+  let searchDetected = false;
 
   try {
     const res = await fetch("/chat", {
@@ -884,9 +898,28 @@ async function sendMessage() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      reply += decoder.decode(value, { stream: true });
+      rawBuffer += decoder.decode(value, { stream: true });
+
+      if (!searchDetected) {
+        if (rawBuffer.startsWith("§SEARCH:")) {
+          const end = rawBuffer.indexOf("§\n");
+          if (end === -1) continue; // wait for full signal
+          const query = rawBuffer.slice(8, end);
+          rawBuffer = rawBuffer.slice(end + 2);
+          searchDetected = true;
+          searchPill = document.createElement("div");
+          searchPill.className = "search-pill";
+          searchPill.innerHTML = `🔍 <em>${escHtml(query)}</em>`;
+        } else {
+          searchDetected = true;
+        }
+      }
+
+      reply += rawBuffer;
+      rawBuffer = "";
       cursor.remove();
-      updateBubble(bubble, reply);
+      bubble.innerHTML = renderMarkdown(reply);
+      if (searchPill) bubble.prepend(searchPill);
       bubble.appendChild(cursor);
       scrollBottom();
     }
