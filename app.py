@@ -35,12 +35,10 @@ def needs_search(user_message):
                     "role": "system",
                     "content": (
                         f"Today is {today}. "
-                        "You decide if a question would benefit from a web search. "
-                        "Default to YES unless it is clearly a personal, creative, or coding task, or pure opinion. "
-                        "Search for: news, events, scores, weather, prices, population, statistics, "
-                        "facts about places/people/companies, anything that could be outdated, "
-                        "or any factual question where fresher data helps. "
-                        "When writing the search query, use the current year where relevant. "
+                        "You decide if a question needs a web search. "
+                        "Reply NO for: greetings, thanks, casual chat, opinions, math, coding, or any message under 4 words. "
+                        "Reply SEARCH for: factual questions about current events, scores, prices, people, places, or anything that could be outdated. "
+                        "Use the current year in search queries where relevant. "
                         "If yes, reply exactly: SEARCH: <concise query> "
                         "If no, reply exactly: NO "
                         "Nothing else."
