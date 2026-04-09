@@ -48,10 +48,7 @@ def is_rate_limited(ip: str) -> bool:
     dq.append(now)
     return False
 
-# Scout handles everything — vision, chat, and "think" mode
-# 8B is only used for the lightweight needs_search pre-filter
 SCOUT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
-TEXT_MODEL  = "llama-3.1-8b-instant"
 
 def load_personality():
     try:
@@ -63,19 +60,6 @@ def load_personality():
 
 PERSONALITY = load_personality()
 
-
-def select_model(user_message, has_image, think):
-    return SCOUT_MODEL
-
-
-def get_max_tokens(model, think):
-    return 768 if think else 512
-
-
-# ── Local search pre-filter ──────────────────────────────────────────────────
-# Avoids a Groq API call for the vast majority of casual messages.
-# Only triggers the needs_search Groq call when there's a real search signal.
-
 _CASUAL_STARTERS = {
     "hi", "hey", "hello", "sup", "yo", "hiya", "howdy",
     "thanks", "thank", "ty", "thx",
@@ -86,71 +70,36 @@ _CASUAL_STARTERS = {
     "bye", "cya", "later",
 }
 
-_SEARCH_RE = re.compile(
-    r"\b(who is|who are|what is|what are|when did|when is|when was|"
-    r"where is|where are|how much|how many|price of|cost of|"
-    r"latest|recent|current|right now|as of|today|this week|this year|"
-    r"news|weather|score|standings|winner|champion|"
-    r"release date|out now|launched|available now|"
-    r"stock|crypto|bitcoin|exchange rate|"
-    r"live|streaming|playing now)\b",
-    re.IGNORECASE,
-)
-
 _CODE_RE = re.compile(r"(def |class |import |function |=>|===|!==|```)")
 
 
 def needs_search(user_message: str):
     """
-    Fast local pre-filter. Only calls Groq when there's an actual search signal.
-    For casual chat (the majority of messages) this returns None with zero API calls.
+    Lightweight local filter only — no API pre-call.
+    Skips obvious casual/code messages, searches everything else.
     """
     msg   = user_message.strip()
     lower = msg.lower()
     words = lower.split()
 
-    # Short messages never need search
-    if len(words) <= 3:
+    # Very short messages
+    if len(words) <= 2:
         return None
 
-    # Casual openers
-    if words[0] in _CASUAL_STARTERS and len(words) <= 6:
+    # Casual openers with short messages
+    if words[0] in _CASUAL_STARTERS and len(words) <= 5:
         return None
 
-    # Code/math content
+    # All casual words
+    if all(w in _CASUAL_STARTERS for w in words):
+        return None
+
+    # Code content
     if _CODE_RE.search(msg):
         return None
 
-    # No search keywords → skip API call entirely
-    if not _SEARCH_RE.search(lower):
-        return None
-
-    # Has a search signal → ask the lightweight model for the actual query
-    today = date.today().strftime("%B %d, %Y")
-    try:
-        resp = client.chat.completions.create(
-            model=TEXT_MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        f"Today is {today}. "
-                        "Does this need a live web search? "
-                        "If yes reply: SEARCH: <concise query>  "
-                        "If no reply: NO  "
-                        "Nothing else."
-                    )
-                },
-                {"role": "user", "content": msg}
-            ],
-            max_tokens=20
-        )
-        result = resp.choices[0].message.content.strip()
-        if result.upper().startswith("SEARCH:"):
-            return result[7:].strip()
-        return None
-    except Exception:
-        return None
+    # Everything else gets searched
+    return msg
 
 
 def web_search(query, max_results=3):
@@ -201,7 +150,6 @@ def set_username():
     name = (data.get("username") or "").strip()[:32]
     if not name:
         return jsonify({"error": "empty"}), 400
-    # Sanitize: alphanumeric + spaces + a few symbols
     import re as _re
     name = _re.sub(r"[^\w\s\-\.!]", "", name)[:32].strip()
     if not name:
@@ -253,8 +201,7 @@ def chat():
             last_user_msg = m["content"]
             break
 
-    model      = select_model(last_user_msg, has_image, think)
-    max_tokens = get_max_tokens(model, think)
+    max_tokens = 768 if think else 512
 
     def generate():
         try:
@@ -269,8 +216,8 @@ def chat():
                 results        = web_search(search_query)
                 search_context = format_search_results(results) if results else ""
 
-            system    = PERSONALITY
             today_str = date.today().strftime("%B %d, %Y")
+            system    = PERSONALITY + f"\n\nToday is {today_str}."
 
             if _CODE_RE.search(last_user_msg) or any(w in last_user_msg.lower() for w in ["code", "fix", "debug", "function", "script", "error", "bug", "write a"]):
                 system += "\n\nThe user is asking about code. Be precise, use code blocks with the correct language tag, and keep explanations short. Working code over lengthy explanation."
@@ -280,22 +227,20 @@ def chat():
                     f"\n\n[Web search results for '{search_query}']\n"
                     f"{search_context}\n"
                     "[End of search results]\n\n"
-                    f"Today is {today_str}. "
                     "You have real web search results above. "
                     "Answer using these — do NOT say you lack real-time info. "
                     "Be direct. Cite the URL when helpful."
                 )
             elif search_query:
                 system += (
-                    f"\n\nToday is {today_str}. "
-                    f"A web search for '{search_query}' returned nothing. "
+                    f"\n\nA web search for '{search_query}' returned nothing. "
                     "Answer from training knowledge and be honest about it."
                 )
 
             messages = [{"role": "system", "content": system}] + history
 
             stream = client.chat.completions.create(
-                model=model,
+                model=SCOUT_MODEL,
                 messages=messages,
                 stream=True,
                 max_tokens=max_tokens
@@ -341,7 +286,7 @@ def imagine():
         user_msg = f"Conversation:\n{context}\n\nUser's request: {message}" if context else f"User's request: {message}"
 
         resp = client.chat.completions.create(
-            model=TEXT_MODEL,
+            model=SCOUT_MODEL,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user_msg}],
             max_tokens=120
         )
@@ -364,7 +309,7 @@ def print_banner():
  ██    ██ ██      ██    ██    ██      ██   ██
   ██████  ███████ ██    ██     ██████ ██   ██
 \033[0m
-  \033[90mv1.4 · scout-only · single-call · local search filter\033[0m
+  \033[90mv1.5 · scout-only · always-search · date-aware\033[0m
 """)
 
 if __name__ == "__main__":
