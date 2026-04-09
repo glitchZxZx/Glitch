@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, Response, stream_with_context, jsonify
 from groq import Groq
 import os
-import json
+import re
 import requests as req_lib
 from urllib.parse import quote
 from datetime import date
@@ -30,7 +30,7 @@ def is_rate_limited(ip: str) -> bool:
 
 VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 TEXT_MODEL   = "llama-3.1-8b-instant"
-SCOUT_MODEL  = "meta-llama/llama-4-scout-17b-16e-instruct"  # Try scout for general text
+SCOUT_MODEL  = "meta-llama/llama-4-scout-17b-16e-instruct"
 THINK_MODEL  = "llama-3.3-70b-versatile"
 
 def load_personality():
@@ -45,33 +45,77 @@ PERSONALITY = load_personality()
 
 
 def select_model(user_message, has_image, think):
-    """Smart model selection to optimize tokens and avoid rate limits."""
     if has_image:
         return VISION_MODEL
-    
-    # For short/casual messages, use the light 8B model
     if len(user_message) < 50 and not think:
         return TEXT_MODEL
-    
-    # For medium complexity, use scout (17B middle ground)
     if len(user_message) < 300 and not think:
         return SCOUT_MODEL
-    
-    # Only use 70B when thinking is explicitly requested
     return THINK_MODEL if think else SCOUT_MODEL
 
 
 def get_max_tokens(model, think):
-    """Return appropriate token limit based on model and thinking mode."""
     if model == THINK_MODEL:
         return 768
     if model == SCOUT_MODEL:
         return 512
-    return 384  # TEXT_MODEL for short responses
+    return 384
 
 
-def needs_search(user_message):
-    """Ask the fast model if this needs a web search. Returns query string or None."""
+# ── Local search pre-filter ──────────────────────────────────────────────────
+# Avoids a Groq API call for the vast majority of casual messages.
+# Only triggers the needs_search Groq call when there's a real search signal.
+
+_CASUAL_STARTERS = {
+    "hi", "hey", "hello", "sup", "yo", "hiya", "howdy",
+    "thanks", "thank", "ty", "thx",
+    "lol", "lmao", "haha", "hehe",
+    "ok", "okay", "k", "sure", "yep", "yeah", "yup", "nope", "nah", "no", "yes",
+    "cool", "nice", "great", "awesome", "wow", "omg",
+    "good", "bad", "fine", "alright",
+    "bye", "cya", "later",
+}
+
+_SEARCH_RE = re.compile(
+    r"\b(who is|who are|what is|what are|when did|when is|when was|"
+    r"where is|where are|how much|how many|price of|cost of|"
+    r"latest|recent|current|right now|as of|today|this week|this year|"
+    r"news|weather|score|standings|winner|champion|"
+    r"release date|out now|launched|available now|"
+    r"stock|crypto|bitcoin|exchange rate|"
+    r"live|streaming|playing now)\b",
+    re.IGNORECASE,
+)
+
+_CODE_RE = re.compile(r"(def |class |import |function |=>|===|!==|```)")
+
+
+def needs_search(user_message: str):
+    """
+    Fast local pre-filter. Only calls Groq when there's an actual search signal.
+    For casual chat (the majority of messages) this returns None with zero API calls.
+    """
+    msg   = user_message.strip()
+    lower = msg.lower()
+    words = lower.split()
+
+    # Short messages never need search
+    if len(words) <= 3:
+        return None
+
+    # Casual openers
+    if words[0] in _CASUAL_STARTERS and len(words) <= 6:
+        return None
+
+    # Code/math content
+    if _CODE_RE.search(msg):
+        return None
+
+    # No search keywords → skip API call entirely
+    if not _SEARCH_RE.search(lower):
+        return None
+
+    # Has a search signal → ask the lightweight model for the actual query
     today = date.today().strftime("%B %d, %Y")
     try:
         resp = client.chat.completions.create(
@@ -81,18 +125,15 @@ def needs_search(user_message):
                     "role": "system",
                     "content": (
                         f"Today is {today}. "
-                        "You decide if a question needs a web search. "
-                        "Reply NO for: greetings, thanks, casual chat, opinions, math, coding, or any message under 4 words. "
-                        "Reply SEARCH for: factual questions about current events, scores, prices, people, places, or anything that could be outdated. "
-                        "Use the current year in search queries where relevant. "
-                        "If yes, reply exactly: SEARCH: <concise query> "
-                        "If no, reply exactly: NO "
+                        "Does this need a live web search? "
+                        "If yes reply: SEARCH: <concise query>  "
+                        "If no reply: NO  "
                         "Nothing else."
                     )
                 },
-                {"role": "user", "content": user_message}
+                {"role": "user", "content": msg}
             ],
-            max_tokens=25
+            max_tokens=20
         )
         result = resp.choices[0].message.content.strip()
         if result.upper().startswith("SEARCH:"):
@@ -103,7 +144,6 @@ def needs_search(user_message):
 
 
 def web_search(query, max_results=3):
-    """Search the web with rate limit handling."""
     try:
         api_key = os.environ.get("TAVILY_API_KEY")
         resp = req_lib.post(
@@ -111,7 +151,7 @@ def web_search(query, max_results=3):
             json={
                 "api_key": api_key,
                 "query": query,
-                "max_results": max_results,  # Reduced from 5 to 3
+                "max_results": max_results,
                 "search_depth": "basic"
             },
             timeout=8
@@ -125,16 +165,15 @@ def web_search(query, max_results=3):
             }
             for r in data.get("results", [])
         ]
-    except Exception as e:
+    except Exception:
         return []
 
 
 def format_search_results(results):
-    """Format search results more concisely."""
     parts = []
-    for r in results[:3]:  # Only use top 3
+    for r in results[:3]:
         title = r.get("title", "")
-        body  = r.get("body", "")[:150]  # Truncate each result
+        body  = r.get("body", "")[:150]
         href  = r.get("href", "")
         parts.append(f"Title: {title}\nSummary: {body}\nURL: {href}")
     return "\n\n---\n\n".join(parts)
@@ -161,26 +200,28 @@ def imprint():
 def chat():
     ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
     if is_rate_limited(ip):
-        return Response("You're sending messages too fast — slow down a bit 🙂", mimetype="text/plain", status=429)
+        return Response(
+            "You're sending messages too fast — give it a moment 🙂",
+            mimetype="text/plain",
+            status=429
+        )
 
     data      = request.get_json()
     history   = data.get("history", [])
-    think     = data.get("think", False)  # Default to False to save tokens
+    think     = data.get("think", False)
     has_image = any(isinstance(m.get("content"), list) for m in history)
 
-    # Trim history server-side to last 10 exchanges (20 messages) to save tokens
+    # Trim history server-side to cap token usage
     if len(history) > 20:
         history = history[-20:]
 
-    # Get last user message (text only) for search decision
     last_user_msg = ""
     for m in reversed(history):
         if m["role"] == "user" and isinstance(m.get("content"), str):
             last_user_msg = m["content"]
             break
 
-    # Select model based on message complexity
-    model = select_model(last_user_msg, has_image, think)
+    model      = select_model(last_user_msg, has_image, think)
     max_tokens = get_max_tokens(model, think)
 
     def generate():
@@ -188,34 +229,32 @@ def chat():
             search_context = ""
             search_query   = None
 
-            # Only check for search on text messages
             if last_user_msg and not has_image:
                 search_query = needs_search(last_user_msg)
 
             if search_query:
                 yield f"§SEARCH:{search_query}§\n"
-                results        = web_search(search_query, max_results=3)
+                results        = web_search(search_query)
                 search_context = format_search_results(results) if results else ""
 
-            # Build system prompt — inject search results if available
-            system = PERSONALITY
+            system    = PERSONALITY
             today_str = date.today().strftime("%B %d, %Y")
+
             if search_context:
                 system += (
                     f"\n\n[Web search results for '{search_query}']\n"
                     f"{search_context}\n"
                     "[End of search results]\n\n"
                     f"Today is {today_str}. "
-                    "IMPORTANT: You have real web search results above. "
-                    "You MUST answer using these results — do NOT say you lack real-time information. "
-                    "Be direct and factual. Cite the source URL when helpful."
+                    "You have real web search results above. "
+                    "Answer using these — do NOT say you lack real-time info. "
+                    "Be direct. Cite the URL when helpful."
                 )
             elif search_query:
-                # Search ran but returned nothing
                 system += (
                     f"\n\nToday is {today_str}. "
-                    f"A web search for '{search_query}' returned no results. "
-                    "Answer from your training knowledge and be upfront that you couldn't fetch live data."
+                    f"A web search for '{search_query}' returned nothing. "
+                    "Answer from training knowledge and be honest about it."
                 )
 
             messages = [{"role": "system", "content": system}] + history
@@ -232,10 +271,9 @@ def chat():
                     yield content
 
         except Exception as e:
-            # Handle rate limits gracefully
             error_msg = str(e)
             if "429" in error_msg or "rate_limit" in error_msg.lower():
-                yield f"(Rate limited — try again in a moment)"
+                yield "(Groq is busy right now — try again in a moment)"
             else:
                 yield f"(Error: {e})"
 
@@ -291,7 +329,7 @@ def print_banner():
  ██    ██ ██      ██    ██    ██      ██   ██
   ██████  ███████ ██    ██     ██████ ██   ██
 \033[0m
-  \033[90mv1.2 · rate-limited · smart routing · token-efficient\033[0m
+  \033[90mv1.3 · single-call · local search filter · rate-limited\033[0m
 """)
 
 if __name__ == "__main__":
