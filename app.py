@@ -229,7 +229,8 @@ def chat():
                     "[End of search results]\n\n"
                     "You have real web search results above. "
                     "Answer using these — do NOT say you lack real-time info. "
-                    "Be direct. Cite the URL when helpful."
+                    "Talk like a person, not like you're reading search results. "
+                    "Don't cite sources or mention URLs unless the user specifically asks for them."
                 )
             elif search_query:
                 system += (
