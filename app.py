@@ -72,11 +72,31 @@ _CASUAL_STARTERS = {
 
 _CODE_RE = re.compile(r"(def |class |import |function |=>|===|!==|```)")
 
+_OPINION_RE = re.compile(
+    r"^(what'?s? your|what do you (think|feel|believe)|do you (think|believe|feel|like|prefer)|"
+    r"ur opinion|your opinion|how do you feel|would you rather|fav(ou?rite)?|"
+    r"do you ever|have you ever|are you|were you|will you|can you imagine|"
+    r"what would you|if you (were|could|had))",
+    re.IGNORECASE,
+)
+
+_SEARCH_SIGNALS = re.compile(
+    r"\b(who is|who are|what is|what are|when did|when is|when was|"
+    r"where is|where are|how much|how many|price of|cost of|"
+    r"latest|recent|current|right now|as of|today|this week|this year|"
+    r"news|weather|score|standings|winner|champion|"
+    r"release date|out now|launched|available|"
+    r"stock|crypto|bitcoin|exchange rate|"
+    r"best .{0,30}right now|top .{0,30}(now|today|2024|2025)|"
+    r"recommend|should i watch|what('?s| is) good|worth (watching|reading|playing))\b",
+    re.IGNORECASE,
+)
+
 
 def needs_search(user_message: str):
     """
-    Lightweight local filter only — no API pre-call.
-    Skips obvious casual/code messages, searches everything else.
+    Lightweight local filter — no API pre-call.
+    Skips casual/opinion/conversational messages, searches when there's a real signal.
     """
     msg   = user_message.strip()
     lower = msg.lower()
@@ -86,7 +106,7 @@ def needs_search(user_message: str):
     if len(words) <= 2:
         return None
 
-    # Casual openers with short messages
+    # Casual openers
     if words[0] in _CASUAL_STARTERS and len(words) <= 5:
         return None
 
@@ -98,8 +118,23 @@ def needs_search(user_message: str):
     if _CODE_RE.search(msg):
         return None
 
-    # Everything else gets searched
-    return msg
+    # Opinion / personal questions — Glitch can answer these herself
+    if _OPINION_RE.search(lower):
+        return None
+
+    # Short conversational replies with no question signal
+    if len(words) <= 8 and not any(c in lower for c in ["?", "who", "what", "when", "where", "how", "which"]):
+        return None
+
+    # Only search if there's an actual search signal
+    if _SEARCH_SIGNALS.search(lower):
+        return msg[:120]
+
+    # Longer messages that look like genuine questions
+    if len(words) >= 5 and "?" in msg:
+        return msg[:120]
+
+    return None
 
 
 def web_search(query, max_results=3):
@@ -310,7 +345,7 @@ def print_banner():
  ██    ██ ██      ██    ██    ██      ██   ██
   ██████  ███████ ██    ██     ██████ ██   ██
 \033[0m
-  \033[90mv1.5 · scout-only · always-search · date-aware\033[0m
+  \033[90mv1.6 · scout-only · smarter search filter · date-aware\033[0m
 """)
 
 if __name__ == "__main__":
