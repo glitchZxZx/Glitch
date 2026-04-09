@@ -4,6 +4,7 @@ import os
 import json
 import requests as req_lib
 from urllib.parse import quote
+from datetime import date
 
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -25,6 +26,7 @@ PERSONALITY = load_personality()
 
 def needs_search(user_message):
     """Ask the fast model if this needs a web search. Returns query string or None."""
+    today = date.today().strftime("%B %d, %Y")
     try:
         resp = client.chat.completions.create(
             model=TEXT_MODEL,
@@ -32,12 +34,16 @@ def needs_search(user_message):
                 {
                     "role": "system",
                     "content": (
-                        "You decide if a question needs a real-time web search to answer accurately. "
-                        "This includes: current news, live scores, today's weather, recent events, "
-                        "current prices, stock values, or anything that changes frequently. "
+                        f"Today is {today}. "
+                        "You decide if a question would benefit from a web search. "
+                        "Default to YES unless it is clearly a personal, creative, or coding task, or pure opinion. "
+                        "Search for: news, events, scores, weather, prices, population, statistics, "
+                        "facts about places/people/companies, anything that could be outdated, "
+                        "or any factual question where fresher data helps. "
+                        "When writing the search query, use the current year where relevant. "
                         "If yes, reply exactly: SEARCH: <concise query> "
                         "If no, reply exactly: NO "
-                        "Nothing else. No explanation."
+                        "Nothing else."
                     )
                 },
                 {"role": "user", "content": user_message}
@@ -129,8 +135,10 @@ def chat():
                     f"\n\n[Web search results for '{search_query}']\n"
                     f"{search_context}\n"
                     "[End of search results]\n\n"
-                    "Use the above results to give an accurate, up-to-date answer. "
-                    "Mention sources/URLs when relevant."
+                    f"Today is {date.today().strftime('%B %d, %Y')}. "
+                    "IMPORTANT: You have real web search results above. "
+                    "You MUST answer using these results — do NOT say you lack real-time information. "
+                    "Be direct and factual. Cite the source URL when helpful."
                 )
 
             messages = [{"role": "system", "content": system}] + history
