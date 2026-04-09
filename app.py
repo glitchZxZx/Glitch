@@ -28,10 +28,10 @@ def is_rate_limited(ip: str) -> bool:
     dq.append(now)
     return False
 
-VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
-TEXT_MODEL   = "llama-3.1-8b-instant"
-SCOUT_MODEL  = "meta-llama/llama-4-scout-17b-16e-instruct"
-THINK_MODEL  = "llama-3.3-70b-versatile"
+# Scout handles everything — vision, chat, and "think" mode
+# 8B is only used for the lightweight needs_search pre-filter
+SCOUT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+TEXT_MODEL  = "llama-3.1-8b-instant"
 
 def load_personality():
     try:
@@ -45,21 +45,17 @@ PERSONALITY = load_personality()
 
 
 def select_model(user_message, has_image, think):
-    if has_image:
-        return VISION_MODEL
-    if len(user_message) < 50 and not think:
+    # Scout handles all chat — vision, normal, and think mode
+    # Only use 8B for very short casual messages to save tokens
+    if not has_image and len(user_message) < 40 and not think:
         return TEXT_MODEL
-    if len(user_message) < 300 and not think:
-        return SCOUT_MODEL
-    return THINK_MODEL if think else SCOUT_MODEL
+    return SCOUT_MODEL
 
 
 def get_max_tokens(model, think):
-    if model == THINK_MODEL:
-        return 768
     if model == SCOUT_MODEL:
-        return 512
-    return 384
+        return 768 if think else 512
+    return 384  # TEXT_MODEL
 
 
 # ── Local search pre-filter ──────────────────────────────────────────────────
@@ -329,7 +325,7 @@ def print_banner():
  ██    ██ ██      ██    ██    ██      ██   ██
   ██████  ███████ ██    ██     ██████ ██   ██
 \033[0m
-  \033[90mv1.3 · single-call · local search filter · rate-limited\033[0m
+  \033[90mv1.4 · scout-only · single-call · local search filter\033[0m
 """)
 
 if __name__ == "__main__":
