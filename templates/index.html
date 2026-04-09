@@ -69,7 +69,7 @@ body {
   transition: background 0.12s, color 0.12s; position: relative;
 }
 .history-item:hover { background: var(--surface2); color: var(--text); }
-.history-item.active { background: var(--surface2); color: var(--purple-soft); }
+.history-item.active { background: rgba(124,110,240,0.1); color: var(--purple-soft); border-left: 2px solid var(--purple); padding-left: 8px; }
 .history-item-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .delete-chat-btn {
   width: 18px; height: 18px; background: none; border: none;
@@ -106,17 +106,48 @@ body {
 
 .empty-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 60vh; gap: 14px; text-align: center;
+  min-height: 60vh; gap: 10px; text-align: center;
 }
+
+@keyframes avatar-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-9px); }
+}
+@keyframes avatar-glitch {
+  0%, 84%, 100% { clip-path: none; transform: translateX(0); filter: none; opacity: 1; }
+  86% { clip-path: inset(10% 0 75% 0); transform: translateX(-4px); filter: hue-rotate(80deg); opacity: 0.85; }
+  89% { clip-path: inset(65% 0 5% 0);  transform: translateX(4px);  filter: hue-rotate(-80deg); opacity: 0.85; }
+  92% { clip-path: none; transform: translateX(0); filter: none; opacity: 1; }
+}
+@keyframes glitch-text {
+  0%, 82%, 100% { transform: none; text-shadow: none; }
+  85% { transform: translateX(-3px); text-shadow: 3px 0 var(--purple); }
+  88% { transform: translateX(3px);  text-shadow: -3px 0 #60a5fa; }
+  91% { transform: none; text-shadow: none; }
+}
+
 .empty-avatar {
-  width: 72px; height: 72px; border-radius: 50%;
+  width: 68px; height: 68px; border-radius: 50%;
   background: var(--purple); display: flex; align-items: center;
   justify-content: center; font-size: 28px; font-weight: 700;
-  color: #fff; overflow: hidden; border: 2px solid var(--border);
+  color: #fff; overflow: hidden; border: 2px solid rgba(124,110,240,0.35);
+  animation: avatar-float 3.2s ease-in-out infinite;
+  position: relative; margin-bottom: 4px;
 }
-.empty-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.empty-state h2 { font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
-.empty-state p { font-size: 14px; color: var(--muted); }
+.empty-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; animation: avatar-glitch 7s ease-in-out infinite; }
+.empty-state h2 { font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; animation: glitch-text 7s ease-in-out infinite; }
+.empty-state > p { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+
+.feature-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.feature-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--muted); font-size: 12.5px; cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.feature-chip:hover { border-color: var(--purple-soft); color: var(--purple-soft); background: rgba(124,110,240,0.08); }
+.feature-chip svg { width: 13px; height: 13px; stroke: currentColor; fill: none; flex-shrink: 0; }
 
 .msg-row { display: flex; flex-direction: column; gap: 6px; }
 .msg-row.user { align-items: flex-end; }
@@ -421,6 +452,21 @@ body {
         <div class="empty-avatar" id="empty-avatar">G</div>
         <h2>Hey, I'm Glitch.</h2>
         <p>What's on your mind?</p>
+        <div class="feature-chips">
+          <button class="feature-chip" onclick="toggleThink(); document.getElementById('user-input').focus()">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/></svg>
+            Think harder
+          </button>
+          <button class="feature-chip" onclick="openGameModal()">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4M8 10v4"/><circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="13" r="1" fill="currentColor" stroke="none"/></svg>
+            Play a game
+          </button>
+          <label class="feature-chip" style="cursor:pointer;">
+            <input type="file" accept="image/*" style="display:none;" onchange="handleImage(event)"/>
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            Attach image
+          </label>
+        </div>
       </div>
     </div>
   </div>
@@ -579,11 +625,11 @@ function toggleThink() {
 }
 function updateTopbarModel() {
   if (thinkMode) {
-    topbarModel.textContent = "llama-3.3-70b · think mode";
+    topbarModel.textContent = "Think mode";
     topbarModel.classList.add("think-mode");
   } else {
     const hasImage = pendingImages.length > 0;
-    topbarModel.textContent = hasImage ? "llama-4-scout · vision" : "llama-3.1-8b · fast";
+    topbarModel.textContent = hasImage ? "Vision mode" : "Fast mode";
     topbarModel.classList.remove("think-mode");
   }
 }
@@ -900,7 +946,7 @@ function deleteChat(i, e) {
     chatInner.innerHTML = "";
     const es = document.createElement("div");
     es.className = "empty-state"; es.id = "empty-state";
-    es.innerHTML = `<div class="empty-avatar" id="empty-avatar">G</div><h2>Hey, I'm Glitch.</h2><p>What's on your mind?</p>`;
+    es.innerHTML = EMPTY_STATE_HTML;
     chatInner.appendChild(es); setAvatars();
   } else if (currentIndex > i) { currentIndex--; }
   saveAndRenderSidebar();
@@ -945,7 +991,7 @@ function newChat() {
   chatInner.innerHTML = "";
   const es = document.createElement("div");
   es.className = "empty-state"; es.id = "empty-state";
-  es.innerHTML = `<div class="empty-avatar" id="empty-avatar">G</div><h2>Hey, I'm Glitch.</h2><p>What's on your mind?</p>`;
+  es.innerHTML = EMPTY_STATE_HTML;
   chatInner.appendChild(es); setAvatars(); renderSidebar(); userInput.focus();
   updateTopbarModel();
 }
@@ -975,7 +1021,7 @@ const rpsWinQuips  = ["wait WHAT 😭 okay that's fair","no way... lucky shot �
 const rpsLoseQuips = ["called it 😌 too easy","heh I'm just built different","knew you'd pick that 👀","not even trying at this point lol","one step ahead always 😌","honestly? saw that coming a mile away","you walked right into that one"];
 const rpsTieQuips  = ["okay we're literally the same person","a tie really come on","we need to stop thinking alike lol","are you copying me??","this is getting weird"];
 
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+const EMPTY_STATE_HTML = `<div class="empty-avatar" id="empty-avatar">G</div><h2>Hey, I'm Glitch.</h2><p>What's on your mind?</p><div class="feature-chips"><button class="feature-chip" onclick="toggleThink(); document.getElementById('user-input').focus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/></svg>Think harder</button><button class="feature-chip" onclick="openGameModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4M8 10v4"/><circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="13" r="1" fill="currentColor" stroke="none"/></svg>Play a game</button><label class="feature-chip" style="cursor:pointer;"><input type="file" accept="image/*" style="display:none;" onchange="handleImage(event)"/><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Attach image</label></div>`;
 
 function playRPS(userChoice) {
   const glitchChoice = rpsChoices[Math.floor(Math.random() * 3)];
