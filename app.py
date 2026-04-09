@@ -58,48 +58,30 @@ def needs_search(user_message):
         return None
 
 
-SEARX_INSTANCES = [
-    "https://searx.be",
-    "https://search.bus-hit.me",
-    "https://searxng.world",
-]
-
 def web_search(query, max_results=5):
-    # Try duckduckgo_search first
     try:
-        from duckduckgo_search import DDGS
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=max_results))
-        if results:
-            return results
-    except Exception:
-        pass
-
-    # Fallback: try public SearXNG instances
-    for base in SEARX_INSTANCES:
-        try:
-            resp = req_lib.get(
-                f"{base}/search",
-                params={"q": query, "format": "json", "categories": "general"},
-                timeout=5,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; Glitch-bot/1.0)"}
-            )
-            data = resp.json()
-            results = [
-                {
-                    "title": r.get("title", ""),
-                    "body":  r.get("content", ""),
-                    "href":  r.get("url", "")
-                }
-                for r in data.get("results", [])[:max_results]
-                if r.get("content")
-            ]
-            if results:
-                return results
-        except Exception:
-            continue
-
-    return []  # caller handles empty
+        api_key = os.environ.get("TAVILY_API_KEY")
+        resp = req_lib.post(
+            "https://api.tavily.com/search",
+            json={
+                "api_key": api_key,
+                "query": query,
+                "max_results": max_results,
+                "search_depth": "basic"
+            },
+            timeout=8
+        )
+        data = resp.json()
+        return [
+            {
+                "title": r.get("title", ""),
+                "body":  r.get("content", ""),
+                "href":  r.get("url", "")
+            }
+            for r in data.get("results", [])
+        ]
+    except Exception as e:
+        return []
 
 
 def format_search_results(results):
@@ -242,6 +224,19 @@ def imagine():
     return jsonify({"url": url, "prompt": prompt})
 
 
+def print_banner():
+    print("""
+\033[35m
+  ██████  ██      ██ ████████  ██████ ██   ██
+ ██       ██      ██    ██    ██      ██   ██
+ ██   ███ ██      ██    ██    ██      ███████
+ ██    ██ ██      ██    ██    ██      ██   ██
+  ██████  ███████ ██    ██     ██████ ██   ██
+\033[0m
+  \033[90mv1.0 · flask · groq · duckduckgo\033[0m
+""")
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+    print_banner()
     app.run(host="0.0.0.0", port=port, debug=False)
