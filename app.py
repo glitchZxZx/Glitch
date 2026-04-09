@@ -278,6 +278,9 @@ def chat():
             system    = PERSONALITY
             today_str = date.today().strftime("%B %d, %Y")
 
+            if _CODE_RE.search(last_user_msg) or any(w in last_user_msg.lower() for w in ["code", "fix", "debug", "function", "script", "error", "bug", "write a"]):
+                system += "\n\nThe user is asking about code. Be precise, use code blocks with the correct language tag, and keep explanations short. Working code over lengthy explanation."
+
             if search_context:
                 system += (
                     f"\n\n[Web search results for '{search_query}']\n"
