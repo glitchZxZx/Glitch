@@ -8,6 +8,9 @@ from urllib.parse import quote
 from datetime import date
 import time
 from collections import deque
+import smtplib
+import random
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -94,43 +97,24 @@ _SEARCH_SIGNALS = re.compile(
 
 
 def needs_search(user_message: str):
-    """
-    Lightweight local filter — no API pre-call.
-    Skips casual/opinion/conversational messages, searches when there's a real signal.
-    """
     msg   = user_message.strip()
     lower = msg.lower()
     words = lower.split()
 
-    # Very short messages
     if len(words) <= 2:
         return None
-
-    # Casual openers
     if words[0] in _CASUAL_STARTERS and len(words) <= 5:
         return None
-
-    # All casual words
     if all(w in _CASUAL_STARTERS for w in words):
         return None
-
-    # Code content
     if _CODE_RE.search(msg):
         return None
-
-    # Opinion / personal questions — Glitch can answer these herself
     if _OPINION_RE.search(lower):
         return None
-
-    # Short conversational replies with no question signal
     if len(words) <= 8 and not any(c in lower for c in ["?", "who", "what", "when", "where", "how", "which"]):
         return None
-
-    # Only search if there's an actual search signal
     if _SEARCH_SIGNALS.search(lower):
         return msg[:120]
-
-    # Longer messages that look like genuine questions
     if len(words) >= 5 and "?" in msg:
         return msg[:120]
 
@@ -173,6 +157,67 @@ def format_search_results(results):
     return "\n\n---\n\n".join(parts)
 
 
+# ── OTP email system ──────────────────────────────────────────────────────────
+# Stores {email: (code, expires_at)}
+_codes: dict = {}
+
+GMAIL_ADDRESS  = os.environ.get("GMAIL_ADDRESS", "glitch.l.l.m.ai@gmail.com")
+GMAIL_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+def send_otp_email(to_email: str, code: str):
+    msg = MIMEText(
+        f"Your Glitch verification code is:\n\n"
+        f"  {code}\n\n"
+        f"This code expires in 10 minutes.\n\n"
+        f"If you didn't request this, you can ignore this email."
+    )
+    msg["Subject"] = f"{code} is your Glitch code"
+    msg["From"]    = f"Glitch <{GMAIL_ADDRESS}>"
+    msg["To"]      = to_email
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+        s.login(GMAIL_ADDRESS, GMAIL_PASSWORD)
+        s.send_message(msg)
+
+@app.route("/api/send-code", methods=["POST"])
+def api_send_code():
+    data  = request.get_json()
+    email = (data or {}).get("email", "").strip().lower()
+
+    if not email or "@" not in email:
+        return jsonify({"error": "invalid email"}), 400
+
+    code = str(random.randint(100000, 999999))
+    _codes[email] = (code, time.time() + 600)  # expires in 10 min
+
+    try:
+        send_otp_email(email, code)
+    except Exception as e:
+        print(f"[OTP] Failed to send to {email}: {e}")
+        return jsonify({"error": "Failed to send email. Check server config."}), 500
+
+    return jsonify({"ok": True})
+
+@app.route("/api/verify-code", methods=["POST"])
+def api_verify_code():
+    data    = request.get_json()
+    email   = (data or {}).get("email", "").strip().lower()
+    entered = (data or {}).get("code", "").strip()
+
+    record = _codes.get(email)
+    if not record:
+        return jsonify({"ok": False, "error": "No code sent for this email"}), 400
+    stored_code, expires_at = record
+    if time.time() > expires_at:
+        del _codes[email]
+        return jsonify({"ok": False, "error": "Code expired"}), 400
+    if entered != stored_code:
+        return jsonify({"ok": False, "error": "Wrong code"}), 400
+
+    del _codes[email]
+    return jsonify({"ok": True})
+
+
+# ── Username routes ───────────────────────────────────────────────────────────
 @app.route("/api/username", methods=["GET"])
 def get_username():
     ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
@@ -194,9 +239,14 @@ def set_username():
     return jsonify({"username": name})
 
 
+# ── Page routes ───────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/login")
+def login_page():
+    return render_template("login.html")
 
 @app.route("/privacy")
 def privacy():
@@ -211,6 +261,7 @@ def imprint():
     return render_template("imprint.html")
 
 
+# ── Chat route ────────────────────────────────────────────────────────────────
 @app.route("/chat", methods=["POST"])
 def chat():
     ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
@@ -226,7 +277,6 @@ def chat():
     think     = data.get("think", False)
     has_image = any(isinstance(m.get("content"), list) for m in history)
 
-    # Trim history server-side to cap token usage
     if len(history) > 20:
         history = history[-20:]
 
@@ -345,7 +395,7 @@ def print_banner():
  ██    ██ ██      ██    ██    ██      ██   ██
   ██████  ███████ ██    ██     ██████ ██   ██
 \033[0m
-  \033[90mv1.6 · scout-only · smarter search filter · date-aware\033[0m
+  \033[90mv1.7 · real OTP email · Gmail SMTP\033[0m
 """)
 
 if __name__ == "__main__":

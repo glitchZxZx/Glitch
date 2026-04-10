@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Glitch — Sign In</title>
+<link rel="icon" type="image/png" href="/static/glitch_logo.png">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0e0e11;
+  --surface: #16161a;
+  --surface2: #1e1e24;
+  --border: #2a2a35;
+  --purple: #7c6ef0;
+  --purple-soft: #a89ff5;
+  --text: #e8e8f0;
+  --muted: #6b6b80;
+  --error: #e24b4a;
+}
+
+body {
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+
+.card {
+  width: 100%; max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px 28px;
+  animation: fadeUp .3s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.logo-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+.logo-icon {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--purple);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.logo-name { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+
+.dots { display: flex; gap: 5px; margin-bottom: 22px; }
+.dot  { height: 4px; border-radius: 2px; background: var(--border); transition: all .3s; flex: 1; }
+.dot.active { background: var(--purple); }
+.dot.done   { background: #3d3578; }
+
+.step-title { font-size: 17px; font-weight: 600; margin-bottom: 3px; letter-spacing: -0.01em; }
+.step-sub   { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.55; }
+
+.field { margin-bottom: 12px; }
+label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px;
+}
+
+input[type="email"], input[type="text"], input[type="number"] {
+  width: 100%;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 11px 13px;
+  color: var(--text); font-family: inherit; font-size: 14px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  -moz-appearance: textfield;
+}
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,110,240,.12); }
+input.err   { border-color: var(--error); }
+
+.hint { font-size: 12px; color: var(--error); margin-top: 5px; display: none; }
+.hint.show { display: block; }
+
+.otp-row { display: flex; gap: 7px; margin-bottom: 12px; }
+.otp-row input { width: 100%; height: 50px; text-align: center; font-size: 20px; font-weight: 600; padding: 0; }
+
+.btn {
+  width: 100%; padding: 12px; background: var(--purple);
+  color: #fff; border: none; border-radius: 8px;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: background .15s, opacity .15s;
+}
+.btn:hover { background: #6a5de0; }
+.btn:active { opacity: .85; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-ghost {
+  width: 100%; padding: 10px; background: transparent;
+  border: 1px solid var(--border); color: var(--muted); border-radius: 8px;
+  font-family: inherit; font-size: 13px; cursor: pointer; margin-top: 8px;
+  transition: border-color .15s, color .15s;
+}
+.btn-ghost:hover { border-color: var(--purple); color: var(--text); }
+
+.resend-row { text-align: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.resend-link { color: var(--purple-soft); cursor: pointer; display: none; }
+.resend-link.show { display: inline; }
+
+.done-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; padding: 4px 0;
+  animation: fadeUp .3s ease both;
+}
+.done-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; color: #fff;
+  margin-bottom: 14px;
+}
+.done-wrap h2  { font-size: 18px; font-weight: 600; margin-bottom: 5px; }
+.done-wrap p   { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+.step { display: none; }
+.step.active { display: block; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div class="logo-row">
+    <div class="logo-icon">G</div>
+    <span class="logo-name">Glitch</span>
+  </div>
+
+  <div class="dots" id="dots">
+    <div class="dot active"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+
+  <!-- Step 1: Email -->
+  <div class="step active" id="step-email">
+    <div class="step-title">Sign in to Glitch</div>
+    <div class="step-sub">Enter your email — we'll send you a code. No password needed.</div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email"/>
+      <div class="hint" id="emailErr">Please enter a valid email address.</div>
+    </div>
+    <div class="hint" id="sendErr" style="margin-bottom:10px;"></div>
+    <button class="btn" id="sendBtn" onclick="sendCode()">Send code</button>
+  </div>
+
+  <!-- Step 2: OTP -->
+  <div class="step" id="step-otp">
+    <div class="step-title">Check your inbox</div>
+    <div class="step-sub">We sent a 6-digit code to <strong id="emailDisplay"></strong></div>
+    <div class="otp-row">
+      <input type="number" class="otp" oninput="otpIn(this,0)" onkeydown="otpKey(event,0)"/>
+      <input type="number" class="otp" oninput="otpIn(this,1)" onkeydown="otpKey(event,1)"/>
+      <input type="number" class="otp" oninput="otpIn(this,2)" onkeydown="otpKey(event,2)"/>
+      <input type="number" class="otp" oninput="otpIn(this,3)" onkeydown="otpKey(event,3)"/>
+      <input type="number" class="otp" oninput="otpIn(this,4)" onkeydown="otpKey(event,4)"/>
+      <input type="number" class="otp" oninput="otpIn(this,5)" onkeydown="otpKey(event,5)"/>
+    </div>
+    <div class="hint" id="otpErr" style="text-align:center;margin-bottom:10px;">Incorrect code. Try again.</div>
+    <button class="btn" id="verifyBtn" onclick="verifyCode()">Verify</button>
+    <button class="btn-ghost" onclick="goBack()">← Change email</button>
+    <div class="resend-row">
+      <span id="timerLabel">Resend in <span id="timerCount">30</span>s</span>
+      <span class="resend-link" id="resendLink" onclick="resend()">Resend code</span>
+    </div>
+  </div>
+
+  <!-- Step 3: Name -->
+  <div class="step" id="step-name">
+    <div class="step-title">Choose your name</div>
+    <div class="step-sub">This is how you'll appear in Glitch.</div>
+    <div class="field">
+      <label>Display name</label>
+      <input type="text" id="nameInput" placeholder="e.g. Krystal" maxlength="32" autocomplete="off"/>
+      <div class="hint" id="nameErr">Name must be at least 2 characters.</div>
+    </div>
+    <button class="btn" onclick="finish()">Start chatting</button>
+  </div>
+
+  <!-- Done -->
+  <div class="step" id="step-done">
+    <div class="done-wrap">
+      <div class="done-avatar" id="doneAvatar">K</div>
+      <h2 id="doneTitle">Welcome, Krystal!</h2>
+      <p>You're all set. Glitch is ready.</p>
+      <button class="btn" onclick="goToChat()">Open Glitch →</button>
+    </div>
+  </div>
+
+</div>
+<script>
+let userEmail = '', timer = null, timerVal = 30;
+
+function dots(active) {
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.className = 'dot' + (i < active ? ' done' : i === active ? ' active' : '');
+  });
+}
+function show(id, dotIdx) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (dotIdx !== undefined) dots(dotIdx);
+}
+
+// ── Step 1: Send code ────────────────────────────────────────────────────────
+async function sendCode() {
+  const v   = document.getElementById('emailInput').value.trim();
+  const err = document.getElementById('emailErr');
+  const sendErr = document.getElementById('sendErr');
+  const btn = document.getElementById('sendBtn');
+
+  sendErr.classList.remove('show');
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+    document.getElementById('emailInput').classList.add('err');
+    err.classList.add('show');
+    return;
+  }
+  document.getElementById('emailInput').classList.remove('err');
+  err.classList.remove('show');
+  userEmail = v;
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  try {
+    const res = await fetch('/api/send-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail })
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      sendErr.textContent = data.error || 'Something went wrong. Try again.';
+      sendErr.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Send code';
+      return;
+    }
+
+    document.getElementById('emailDisplay').textContent = userEmail;
+    show('step-otp', 1);
+    startTimer();
+    document.querySelector('.otp').focus();
+  } catch (e) {
+    sendErr.textContent = 'Network error. Try again.';
+    sendErr.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Send code';
+  }
+}
+document.getElementById('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendCode(); });
+
+// ── Step 2: Verify code ──────────────────────────────────────────────────────
+const otps = () => document.querySelectorAll('.otp');
+
+function otpIn(el, i) {
+  el.value = el.value.toString().slice(-1);
+  if (el.value && i < 5) otps()[i + 1].focus();
+  document.getElementById('otpErr').classList.remove('show');
+  otps().forEach(o => o.classList.remove('err'));
+}
+function otpKey(e, i) {
+  if (e.key === 'Backspace' && !otps()[i].value && i > 0) { otps()[i-1].value = ''; otps()[i-1].focus(); }
+  if (e.key === 'Enter') verifyCode();
+}
+
+async function verifyCode() {
+  const entered = Array.from(otps()).map(o => o.value).join('');
+  const errEl   = document.getElementById('otpErr');
+  const btn     = document.getElementById('verifyBtn');
+
+  if (entered.length < 6) {
+    errEl.textContent = 'Please enter all 6 digits.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+
+  try {
+    const res = await fetch('/api/verify-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail, code: entered })
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      errEl.textContent = data.error === 'Code expired'
+        ? 'Code expired — request a new one.'
+        : 'Incorrect code. Try again.';
+      errEl.classList.add('show');
+      otps().forEach(o => { o.classList.add('err'); o.value = ''; });
+      otps()[0].focus();
+      btn.disabled = false;
+      btn.textContent = 'Verify';
+      return;
+    }
+
+    clearTimer();
+    show('step-name', 2);
+    setTimeout(() => document.getElementById('nameInput').focus(), 80);
+  } catch (e) {
+    errEl.textContent = 'Network error. Try again.';
+    errEl.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Verify';
+  }
+}
+
+function goBack() { clearTimer(); show('step-email', 0); }
+
+// ── Timer ────────────────────────────────────────────────────────────────────
+function startTimer() {
+  timerVal = 30;
+  document.getElementById('timerLabel').style.display = 'inline';
+  document.getElementById('resendLink').classList.remove('show');
+  document.getElementById('timerCount').textContent = timerVal;
+  timer = setInterval(() => {
+    timerVal--;
+    document.getElementById('timerCount').textContent = timerVal;
+    if (timerVal <= 0) {
+      clearTimer();
+      document.getElementById('timerLabel').style.display = 'none';
+      document.getElementById('resendLink').classList.add('show');
+    }
+  }, 1000);
+}
+function clearTimer() { if (timer) { clearInterval(timer); timer = null; } }
+async function resend() {
+  otps().forEach(o => { o.value = ''; o.classList.remove('err'); });
+  document.getElementById('otpErr').classList.remove('show');
+  otps()[0].focus();
+  startTimer();
+  await fetch('/api/send-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: userEmail })
+  });
+}
+
+// ── Step 3: Finish ───────────────────────────────────────────────────────────
+async function finish() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (name.length < 2) {
+    document.getElementById('nameInput').classList.add('err');
+    document.getElementById('nameErr').classList.add('show');
+    return;
+  }
+
+  // Save username to server
+  await fetch('/api/username', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: name })
+  });
+
+  const letter = name.charAt(0).toUpperCase();
+  const hue    = (letter.charCodeAt(0) * 37) % 360;
+  const av     = document.getElementById('doneAvatar');
+  av.textContent = letter;
+  av.style.background = `hsl(${hue},55%,48%)`;
+  document.getElementById('doneTitle').textContent = `Welcome, ${name}!`;
+  document.getElementById('dots').style.display = 'none';
+  show('step-done');
+}
+document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') finish(); });
+
+function goToChat() { window.location.href = '/'; }
+</script>
+</body>
+</html>
