@@ -41,7 +41,7 @@ a { color: var(--purple); }
   <p class="meta">Last updated: April 2026 · glitch-ozuf.onrender.com</p>
 
   <div class="highlight">
-    Short version: Glitch does not store your conversations. Everything stays in your browser and is gone when you close the tab.
+    Short version: If you're logged in, your chat history is saved to our server so you can access it across sessions. If you're not logged in, nothing is stored anywhere.
   </div>
 
   <h2>Who runs this</h2>
@@ -50,24 +50,31 @@ a { color: var(--purple); }
   <h2>What data we collect</h2>
   <p>We collect as little as possible:</p>
   <ul>
-    <li>Your messages are sent to the Groq API to generate a response. They are not stored on our servers.</li>
-    <li>Images you upload are sent directly to the Groq API for processing and are not saved anywhere.</li>
-    <li>Chat history is stored only in your own browser (localStorage) and never leaves your device.</li>
-    <li>We do not use cookies, analytics, or tracking of any kind.</li>
+    <li>Your messages are sent to the Groq API to generate a response.</li>
+    <li>Images you upload are sent to the Groq API for processing and are not saved on our servers.</li>
+    <li><strong>If you are logged in:</strong> your chat history is saved on our server, associated with your IP address and display name. This is what lets your conversations persist across sessions.</li>
+    <li><strong>If you are not logged in:</strong> no chat history is stored anywhere — conversations are lost when you close the tab.</li>
+    <li>Your display name and email verification status are stored on our server to identify your account.</li>
+    <li>We do not use cookies for tracking. A single cookie is used to remember whether you've dismissed our policy update notice.</li>
+    <li>We do not use analytics or third-party tracking of any kind.</li>
   </ul>
+
+  <h2>How we store your data</h2>
+  <p>Chat history and usernames are stored in JSON files on our server, hosted on Render. Data is associated with your IP address. We keep up to 50 conversations per user. You can delete individual chats at any time from the sidebar. To request full deletion of your data, contact us at <a href="mailto:glitch.l.l.m.ai@gmail.com">glitch.l.l.m.ai@gmail.com</a>.</p>
 
   <h2>Third party services</h2>
   <p>Glitch uses the following third party services:</p>
   <ul>
     <li><strong>Groq</strong> — processes your messages to generate AI responses. See Groq's privacy policy at <a href="https://groq.com/privacy-policy" target="_blank">groq.com/privacy-policy</a></li>
-    <li><strong>Render</strong> — hosts the website. See Render's privacy policy at <a href="https://render.com/privacy" target="_blank">render.com/privacy</a></li>
+    <li><strong>Render</strong> — hosts the website and stores server-side data. See Render's privacy policy at <a href="https://render.com/privacy" target="_blank">render.com/privacy</a></li>
+    <li><strong>Tavily</strong> — used for web search when Glitch looks up current information. See <a href="https://tavily.com/privacy" target="_blank">tavily.com/privacy</a></li>
   </ul>
 
   <h2>Your rights (GDPR)</h2>
-  <p>As a user in the EU/EEA you have the right to access, correct, or delete any personal data we hold about you. Since we don't store any personal data, there is nothing to delete. If you have questions, contact us at <a href="mailto:glitch.l.l.m.ai@gmail.com">glitch.l.l.m.ai@gmail.com</a>.</p>
+  <p>As a user in the EU/EEA you have the right to access, correct, or delete any personal data we hold about you. If you are logged in, this includes your display name and saved chat history. To exercise these rights, contact us at <a href="mailto:glitch.l.l.m.ai@gmail.com">glitch.l.l.m.ai@gmail.com</a> and we will respond within 30 days.</p>
 
   <h2>Changes</h2>
-  <p>We may update this policy occasionally. The date at the top will always reflect the latest version.</p>
+  <p>We may update this policy occasionally. The date at the top will always reflect the latest version. Significant changes will be shown as a notice on the Glitch homepage.</p>
 </div>
 </body>
 </html>

@@ -143,8 +143,8 @@ input.err   { border-color: var(--error); }
 
   <!-- Step 1: Email -->
   <div class="step active" id="step-email">
-    <div class="step-title">Sign in to Glitch</div>
-    <div class="step-sub">Enter your email — we'll send you a code. No password needed.</div>
+    <div class="step-title" id="step1-title">Sign in to Glitch</div>
+    <div class="step-sub" id="step1-sub">Enter your email — we'll send you a code. No password needed.</div>
     <div class="field">
       <label>Email</label>
       <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email"/>
@@ -175,7 +175,7 @@ input.err   { border-color: var(--error); }
     </div>
   </div>
 
-  <!-- Step 3: Name -->
+  <!-- Step 3: Name (only for new users signing up) -->
   <div class="step" id="step-name">
     <div class="step-title">Choose your name</div>
     <div class="step-sub">This is how you'll appear in Glitch.</div>
@@ -192,13 +192,37 @@ input.err   { border-color: var(--error); }
     <div class="done-wrap">
       <div class="done-avatar" id="doneAvatar">K</div>
       <h2 id="doneTitle">Welcome, Krystal!</h2>
-      <p>You're all set. Glitch is ready.</p>
+      <p id="doneSubtitle">You're all set. Glitch is ready.</p>
       <button class="btn" onclick="goToChat()">Open Glitch →</button>
     </div>
   </div>
 
 </div>
 <script>
+// Detect whether this is a "signup" flow (new user) or "login" flow (returning user)
+// /signup route or ?new=1 param → signup mode (always show name step)
+// /login route → login mode (skip name step if user already has one)
+const isSignupMode = window.location.pathname === '/signup' || new URLSearchParams(window.location.search).get('new') === '1';
+
+// Set heading based on mode
+if (isSignupMode) {
+  document.getElementById('step1-title').textContent = 'Create your account';
+  document.getElementById('step1-sub').textContent = 'Enter your email — we\'ll send you a code. No password needed.';
+} else {
+  document.getElementById('step1-title').textContent = 'Welcome back';
+  document.getElementById('step1-sub').textContent = 'Enter your email to sign in. We\'ll send you a one-time code.';
+}
+
+// Dots: 3 for signup (email → otp → name), 2 for login (email → otp → done)
+const totalDots = isSignupMode ? 3 : 2;
+const dotsEl = document.getElementById('dots');
+dotsEl.innerHTML = '';
+for (let i = 0; i < totalDots; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
 let userEmail = '', timer = null, timerVal = 30;
 
 function dots(active) {
@@ -210,6 +234,18 @@ function show(id, dotIdx) {
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (dotIdx !== undefined) dots(dotIdx);
+}
+
+function showDoneScreen(name, isReturning) {
+  const letter = name.charAt(0).toUpperCase();
+  const hue    = (letter.charCodeAt(0) * 37) % 360;
+  const av     = document.getElementById('doneAvatar');
+  av.textContent = letter;
+  av.style.background = `hsl(${hue},55%,48%)`;
+  document.getElementById('doneTitle').textContent = isReturning ? `Hey, ${name}!` : `Welcome, ${name}!`;
+  document.getElementById('doneSubtitle').textContent = isReturning ? 'Good to see you. Glitch is ready.' : 'You\'re all set. Glitch is ready.';
+  document.getElementById('dots').style.display = 'none';
+  show('step-done');
 }
 
 // ── Step 1: Send code ────────────────────────────────────────────────────────
@@ -311,8 +347,18 @@ async function verifyCode() {
     }
 
     clearTimer();
-    show('step-name', 2);
-    setTimeout(() => document.getElementById('nameInput').focus(), 80);
+
+    // If the user already has a username AND we're in login mode → skip name step
+    if (data.hasUsername && !isSignupMode) {
+      showDoneScreen(data.username, true);
+    } else if (data.hasUsername && isSignupMode) {
+      // Already has account, just log them in anyway
+      showDoneScreen(data.username, true);
+    } else {
+      // New user — ask for a name
+      show('step-name', 2);
+      setTimeout(() => document.getElementById('nameInput').focus(), 80);
+    }
   } catch (e) {
     errEl.textContent = 'Network error. Try again.';
     errEl.classList.add('show');
@@ -352,7 +398,7 @@ async function resend() {
   });
 }
 
-// ── Step 3: Finish ───────────────────────────────────────────────────────────
+// ── Step 3: Finish (new users only) ─────────────────────────────────────────
 async function finish() {
   const name = document.getElementById('nameInput').value.trim();
   if (name.length < 2) {
@@ -361,21 +407,13 @@ async function finish() {
     return;
   }
 
-  // Save username to server
   await fetch('/api/username', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: name })
   });
 
-  const letter = name.charAt(0).toUpperCase();
-  const hue    = (letter.charCodeAt(0) * 37) % 360;
-  const av     = document.getElementById('doneAvatar');
-  av.textContent = letter;
-  av.style.background = `hsl(${hue},55%,48%)`;
-  document.getElementById('doneTitle').textContent = `Welcome, ${name}!`;
-  document.getElementById('dots').style.display = 'none';
-  show('step-done');
+  showDoneScreen(name, false);
 }
 document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') finish(); });
 

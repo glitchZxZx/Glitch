@@ -34,6 +34,65 @@ def _save_usernames(d):
 
 _usernames: dict = _load_usernames()
 
+# ── Server-side chat storage ─────────────────────────────────────────────────
+CHATS_FILE = "chats.json"
+
+def _load_chats():
+    try:
+        with open(CHATS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_chats(d):
+    try:
+        with open(CHATS_FILE, "w") as f:
+            json.dump(d, f)
+    except Exception:
+        pass
+
+_chats: dict = _load_chats()
+
+@app.route("/api/chats", methods=["GET"])
+def get_chats():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    # Only return chats if user has a username (is "logged in")
+    if not _usernames.get(ip):
+        return jsonify({"chats": [], "loggedIn": False})
+    return jsonify({"chats": _chats.get(ip, []), "loggedIn": True})
+
+@app.route("/api/chats", methods=["POST"])
+def save_chat():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    if not _usernames.get(ip):
+        return jsonify({"error": "not logged in"}), 401
+    data = request.get_json()
+    chat = data.get("chat")
+    if not chat or not chat.get("id"):
+        return jsonify({"error": "invalid"}), 400
+    user_chats = _chats.get(ip, [])
+    # Update existing or insert at front
+    for i, c in enumerate(user_chats):
+        if c["id"] == chat["id"]:
+            user_chats[i] = chat
+            break
+    else:
+        user_chats.insert(0, chat)
+    _chats[ip] = user_chats[:50]  # max 50 chats per user
+    _save_chats(_chats)
+    return jsonify({"ok": True})
+
+@app.route("/api/chats/<chat_id>", methods=["DELETE"])
+def delete_chat_route(chat_id):
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    if not _usernames.get(ip):
+        return jsonify({"error": "not logged in"}), 401
+    user_chats = _chats.get(ip, [])
+    _chats[ip] = [c for c in user_chats if c["id"] != chat_id]
+    _save_chats(_chats)
+    return jsonify({"ok": True})
+
+
 # Per-IP rate limit: max 20 requests per 60 seconds
 RATE_LIMIT = 20
 RATE_WINDOW = 60
@@ -158,7 +217,6 @@ def format_search_results(results):
 
 
 # ── OTP email system ──────────────────────────────────────────────────────────
-# Stores {email: (code, expires_at)}
 _codes: dict = {}
 
 GMAIL_ADDRESS  = os.environ.get("GMAIL_ADDRESS", "glitch.l.l.m.ai@gmail.com")
@@ -187,7 +245,7 @@ def api_send_code():
         return jsonify({"error": "invalid email"}), 400
 
     code = str(random.randint(100000, 999999))
-    _codes[email] = (code, time.time() + 600)  # expires in 10 min
+    _codes[email] = (code, time.time() + 600)
 
     try:
         send_otp_email(email, code)
@@ -199,6 +257,7 @@ def api_send_code():
 
 @app.route("/api/verify-code", methods=["POST"])
 def api_verify_code():
+    ip      = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
     data    = request.get_json()
     email   = (data or {}).get("email", "").strip().lower()
     entered = (data or {}).get("code", "").strip()
@@ -214,7 +273,9 @@ def api_verify_code():
         return jsonify({"ok": False, "error": "Wrong code"}), 400
 
     del _codes[email]
-    return jsonify({"ok": True})
+    # Tell the frontend whether this user already has a username set
+    existing_username = _usernames.get(ip, "")
+    return jsonify({"ok": True, "hasUsername": bool(existing_username), "username": existing_username})
 
 
 # ── Username routes ───────────────────────────────────────────────────────────
@@ -247,6 +308,11 @@ def index():
 @app.route("/login")
 def login_page():
     return render_template("login.html")
+
+@app.route("/signup")
+def signup_page():
+    # Renders the same login template but with ?new=1 flag baked in
+    return render_template("login.html", signup=True)
 
 @app.route("/privacy")
 def privacy():
@@ -395,7 +461,7 @@ def print_banner():
  ██    ██ ██      ██    ██    ██      ██   ██
   ██████  ███████ ██    ██     ██████ ██   ██
 \033[0m
-  \033[90mv1.7 · real OTP email · Gmail SMTP\033[0m
+  \033[90mv1.8 · server-side chats · Gmail SMTP\033[0m
 """)
 
 if __name__ == "__main__":

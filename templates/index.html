@@ -111,6 +111,17 @@ body {
   cursor: pointer; text-decoration: none; transition: background 0.15s;
 }
 .auth-btn-solid:hover { background: #6a5de0; }
+.user-info {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+}
+.user-info-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.user-info-name { font-size: 13px; font-weight: 500; color: var(--text); }
 
 /* CHAT */
 .chat-area { flex: 1; overflow-y: auto; padding: 28px 0 8px; scroll-behavior: smooth; }
@@ -437,6 +448,38 @@ body {
 
 @media (max-width: 600px) { .sidebar { display: none; } }
 
+/* ToS update banner */
+.tos-banner {
+  position: fixed; bottom: 20px; right: 20px; z-index: 200;
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--purple);
+  border-radius: 12px; padding: 14px 16px; max-width: 300px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  animation: bannerSlide .35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes bannerSlide {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+.tos-banner-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;
+}
+.tos-banner-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.tos-banner-close {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 16px; line-height: 1; flex-shrink: 0; padding: 0 2px;
+  transition: color .12s;
+}
+.tos-banner-close:hover { color: var(--text); }
+.tos-banner-body { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+.tos-banner-links { display: flex; gap: 10px; }
+.tos-banner-links a {
+  font-size: 12px; color: var(--purple-soft); text-decoration: none;
+  padding: 5px 10px; border: 1px solid rgba(124,110,240,.3);
+  border-radius: 6px; transition: border-color .15s, background .15s;
+}
+.tos-banner-links a:hover { border-color: var(--purple); background: rgba(124,110,240,.08); }
+
 /* Sidebar footer + status */
 .sidebar-footer { padding: 10px 12px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
 .status-link {
@@ -490,7 +533,7 @@ body {
     </div>
     <div class="topbar-right" id="topbar-auth">
       <a href="/login" class="auth-btn-ghost">Log in</a>
-      <a href="/login" class="auth-btn-solid">Sign up</a>
+      <a href="/signup" class="auth-btn-solid">Sign up</a>
     </div>
   </div>
 
@@ -573,6 +616,21 @@ body {
 
 <div class="paste-hint" id="paste-hint">📋 Image pasted!</div>
 
+<!-- ToS update banner — shown once via cookie -->
+<div class="tos-banner" id="tos-banner" style="display:none;">
+  <div class="tos-banner-top">
+    <span class="tos-banner-title">📋 We updated our policies</span>
+    <button class="tos-banner-close" onclick="dismissTosBanner()" title="Dismiss">×</button>
+  </div>
+  <div class="tos-banner-body">
+    Chat history is now saved to your account when you're logged in. We've updated our Privacy Policy to reflect this.
+  </div>
+  <div class="tos-banner-links">
+    <a href="/privacy" target="_blank">Privacy Policy</a>
+    <a href="/terms" target="_blank">Terms</a>
+  </div>
+</div>
+
 <div class="modal-overlay" id="game-modal" onclick="closeGameModalOutside(event)">
   <div class="modal">
     <div class="modal-header">
@@ -629,8 +687,9 @@ body {
 <script>
 const AVATAR_URL = "/static/glitch_pfp.jpg";
 
-let sessions = JSON.parse(localStorage.getItem("glitch_sessions") || "[]");
+let sessions = [];
 let currentIndex = -1;
+let isLoggedIn = false;
 let history = [];
 let pendingImages = [];
 let thinking = false;
@@ -813,8 +872,10 @@ function makeAvatarEl(isUser) {
     img.onerror = () => { img.remove(); av.textContent = "G"; };
     av.appendChild(img);
   } else {
-    av.textContent = "K";
-    av.style.background = "#3a3560";
+    const letter = currentUsername ? currentUsername.charAt(0).toUpperCase() : "Y";
+    av.textContent = letter;
+    const hue = currentUsername ? (currentUsername.charCodeAt(0) * 37) % 360 : 200;
+    av.style.background = `hsl(${hue},55%,38%)`;
   }
   return av;
 }
@@ -908,9 +969,9 @@ async function sendMessage() {
 
   if (currentIndex === -1) {
     const title = text.length > 32 ? text.slice(0, 32) + "…" : (text || "Image");
-    sessions.unshift({ title, history: [] });
+    sessions.unshift({ id: Date.now().toString(), title, history: [] });
     currentIndex = 0;
-    saveAndRenderSidebar();
+    renderSidebar();
   }
   if (!imgs.length && detectImageRequest(text)) {
     await handleImageGeneration(text);
@@ -1006,13 +1067,21 @@ async function handleImageGeneration(text) {
   scrollBottom();
 }
 
-function saveAndRenderSidebar() {
-  localStorage.setItem("glitch_sessions", JSON.stringify(sessions.slice(0, 30)));
+async function saveAndRenderSidebar() {
   renderSidebar();
+  if (!isLoggedIn || currentIndex < 0 || !sessions[currentIndex]) return;
+  try {
+    await fetch("/api/chats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat: sessions[currentIndex] })
+    });
+  } catch { /* silently fail */ }
 }
 
-function deleteChat(i, e) {
+async function deleteChat(i, e) {
   e.stopPropagation();
+  const chat = sessions[i];
   sessions.splice(i, 1);
   if (currentIndex === i) {
     currentIndex = -1; history = [];
@@ -1022,7 +1091,10 @@ function deleteChat(i, e) {
     es.innerHTML = EMPTY_STATE_HTML;
     chatInner.appendChild(es); setAvatars();
   } else if (currentIndex > i) { currentIndex--; }
-  saveAndRenderSidebar();
+  renderSidebar();
+  if (isLoggedIn && chat?.id) {
+    try { await fetch(`/api/chats/${chat.id}`, { method: "DELETE" }); } catch { /* silently fail */ }
+  }
 }
 
 function renderSidebar() {
@@ -1069,7 +1141,6 @@ function newChat() {
   updateTopbarModel();
 }
 
-renderSidebar();
 updateTopbarModel();
 
 function openGameModal() { document.getElementById("game-modal").classList.add("open"); }
@@ -1181,8 +1252,20 @@ function resetCurrentGame(){
   } else { initC4(); }
 }
 
-// ── Username system ─────────────────────────────────────────────────────────
+// ── Username + auth state ────────────────────────────────────────────────────
 let currentUsername = "";
+
+async function loadServerChats() {
+  try {
+    const res = await fetch("/api/chats");
+    const data = await res.json();
+    isLoggedIn = data.loggedIn || false;
+    sessions = data.chats || [];
+  } catch {
+    sessions = [];
+  }
+  renderSidebar();
+}
 
 async function initUsername() {
   try {
@@ -1190,6 +1273,9 @@ async function initUsername() {
     const data = await res.json();
     if (data.username) {
       currentUsername = data.username;
+      isLoggedIn = true;
+
+      // Show username in sidebar header
       const existing = document.getElementById("sidebar-username");
       if (!existing) {
         const span = document.createElement("span");
@@ -1198,11 +1284,53 @@ async function initUsername() {
         span.textContent = currentUsername;
         document.querySelector(".sidebar-header").appendChild(span);
       }
+
+      // Replace Log in / Sign up buttons with user avatar + name
+      const authEl = document.getElementById("topbar-auth");
+      if (authEl) {
+        const letter = currentUsername.charAt(0).toUpperCase();
+        const hue = (currentUsername.charCodeAt(0) * 37) % 360;
+        authEl.innerHTML = `
+          <div class="user-info">
+            <div class="user-info-avatar" style="background:hsl(${hue},55%,48%)">${letter}</div>
+            <span class="user-info-name">${currentUsername}</span>
+          </div>`;
+      }
     }
   } catch { /* not logged in, fine */ }
+
+  // Always load chats from server (empty if not logged in)
+  await loadServerChats();
 }
 
 initUsername();
+
+// ── ToS update banner ────────────────────────────────────────────────────────
+(function() {
+  const COOKIE = "glitch_tos_v2";
+  function hasCookie(name) {
+    return document.cookie.split(";").some(c => c.trim().startsWith(name + "="));
+  }
+  function setCookie(name, days) {
+    const d = new Date();
+    d.setTime(d.getTime() + days * 864e5);
+    document.cookie = `${name}=1;expires=${d.toUTCString()};path=/`;
+  }
+  if (!hasCookie(COOKIE)) {
+    const banner = document.getElementById("tos-banner");
+    if (banner) banner.style.display = "";
+  }
+  window.dismissTosBanner = function() {
+    setCookie(COOKIE, 365);
+    const banner = document.getElementById("tos-banner");
+    if (banner) {
+      banner.style.opacity = "0";
+      banner.style.transform = "translateY(10px)";
+      banner.style.transition = "opacity .2s, transform .2s";
+      setTimeout(() => banner.remove(), 220);
+    }
+  };
+})();
 
 // ── Status page fetch ────────────────────────────────────────────────────────
 (async function fetchStatus() {
