@@ -1,0 +1,14 @@
+# Runtime data — never commit these
+usernames.json
+chats.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+.venv/
+*.egg-info/
+dist/
