@@ -327,23 +327,6 @@ def imprint():
     return render_template("imprint.html")
 
 
-# ── Debug route (temporary) ───────────────────────────────────────────────────
-@app.route('/debug-data')
-def debug_data():
-    password = request.args.get('key')
-    if password != 'Kasser9900':
-        return jsonify({'error': 'unauthorized'}), 401
-
-    data = {}
-    for f in ['usernames.json', 'chats.json']:
-        if os.path.exists(f):
-            with open(f) as file:
-                data[f] = json.load(file)
-        else:
-            data[f] = 'file not found'
-    return jsonify(data)
-
-
 # ── Chat route ────────────────────────────────────────────────────────────────
 @app.route("/chat", methods=["POST"])
 def chat():
