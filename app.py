@@ -223,63 +223,41 @@ GMAIL_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 def send_otp_email(to_email: str, code: str):
     html = f"""<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#0e0e11;font-family:-apple-system,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0e0e11;padding:40px 16px;">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
-
-        <!-- Header -->
         <tr><td style="padding-bottom:28px;text-align:center;">
           <span style="font-size:28px;font-weight:800;color:#e8e8f0;letter-spacing:-0.03em;">Glitch</span>
         </td></tr>
-
-        <!-- Card -->
         <tr><td style="background:#16161a;border:1px solid #2a2a35;border-radius:16px;padding:36px 32px;">
-
-          <p style="margin:0 0 6px;font-size:20px;font-weight:700;color:#e8e8f0;letter-spacing:-0.02em;">
-            Your verification code
-          </p>
-          <p style="margin:0 0 28px;font-size:14px;color:#6b6b80;line-height:1.6;">
-            Enter this code on the sign-up page. It expires in 10 minutes.
-          </p>
-
-          <!-- Code box -->
+          <p style="margin:0 0 6px;font-size:20px;font-weight:700;color:#e8e8f0;letter-spacing:-0.02em;">Your verification code</p>
+          <p style="margin:0 0 28px;font-size:14px;color:#6b6b80;line-height:1.6;">Enter this code on the sign-up page. It expires in 10 minutes.</p>
           <div style="background:#0e0e11;border:1px solid #2a2a35;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
-            <span style="font-size:40px;font-weight:800;color:#7c6ef0;letter-spacing:0.18em;font-variant-numeric:tabular-nums;">
-              {code}
-            </span>
+            <span style="font-size:40px;font-weight:800;color:#7c6ef0;letter-spacing:0.18em;">{code}</span>
           </div>
-
-          <p style="margin:0;font-size:13px;color:#6b6b80;line-height:1.65;">
-            If you didn't request this, you can safely ignore this email. Someone may have typed your address by mistake.
-          </p>
-
+          <p style="margin:0;font-size:13px;color:#6b6b80;line-height:1.65;">If you didn't request this, you can safely ignore this email.</p>
         </td></tr>
-
-        <!-- Footer -->
         <tr><td style="padding-top:24px;text-align:center;">
-          <p style="margin:0;font-size:12px;color:#3a3a50;">
-            Glitch &middot; glitch-ozuf.onrender.com
-          </p>
+          <p style="margin:0;font-size:12px;color:#3a3a50;">Glitch &middot; glitch-ozuf.onrender.com</p>
         </td></tr>
-
       </table>
     </td></tr>
   </table>
 </body>
 </html>"""
 
-    api_key = os.environ.get("RESEND_API_KEY", "")
+    api_key = os.environ.get("BREVO_API_KEY", "")
     resp = req_lib.post(
-        "https://api.resend.com/emails",
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        "https://api.brevo.com/v3/smtp/email",
+        headers={"api-key": api_key, "Content-Type": "application/json"},
         json={
-            "from": "Glitch <onboarding@resend.dev>",
-            "to": [to_email],
+            "sender": {"name": "Glitch", "email": "glitch.l.l.m.ai@gmail.com"},
+            "to": [{"email": to_email}],
             "subject": f"{code} is your Glitch code",
-            "html": html,
-            "text": f"Your Glitch verification code is: {code}\n\nExpires in 10 minutes."
+            "htmlContent": html,
+            "textContent": f"Your Glitch verification code is: {code}\n\nExpires in 10 minutes."
         },
         timeout=8
     )
