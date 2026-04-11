@@ -413,6 +413,36 @@ def chat():
     return Response(stream_with_context(generate()), mimetype="text/plain")
 
 
+@app.route("/api/title", methods=["POST"])
+def generate_title():
+    data = request.get_json()
+    user_msg = (data.get("userMessage") or "")[:300]
+    ai_msg   = (data.get("aiMessage")   or "")[:300]
+    if not user_msg:
+        return jsonify({"title": "New chat"})
+    try:
+        resp = client.chat.completions.create(
+            model=SCOUT_MODEL,
+            messages=[{
+                "role": "user",
+                "content": (
+                    f"User said: {user_msg}\n"
+                    f"AI replied: {ai_msg}\n\n"
+                    "Write a chat title for this conversation. "
+                    "3-5 words max. No quotes. No punctuation at the end. "
+                    "Be specific, not generic. Output ONLY the title."
+                )
+            }],
+            max_tokens=20
+        )
+        title = resp.choices[0].message.content.strip().strip('"').strip("'")
+        if len(title) > 50:
+            title = title[:50]
+        return jsonify({"title": title or "New chat"})
+    except Exception:
+        return jsonify({"title": user_msg[:32] + ("…" if len(user_msg) > 32 else "")})
+
+
 @app.route("/imagine", methods=["POST"])
 def imagine():
     data    = request.get_json()
