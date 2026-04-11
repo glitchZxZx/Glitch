@@ -1391,17 +1391,32 @@ function toggleVoice() {
   const micBtn = document.getElementById("mic-btn");
   if (isRecording) { recognition?.stop(); return; }
   recognition = new SRClass();
-  recognition.continuous = false;
+  recognition.continuous = true;
   recognition.interimResults = true;
-  recognition.lang = navigator.language || "en-US";
-  recognition.onstart = () => { isRecording = true; micBtn.classList.add("recording"); };
+  recognition.maxAlternatives = 1;
+  recognition.lang = "en-US";
+
+  let finalTranscript = "";
+
+  recognition.onstart = () => { isRecording = true; micBtn.classList.add("recording"); finalTranscript = ""; };
   recognition.onresult = (e) => {
-    const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
-    userInput.value = transcript;
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalTranscript += t;
+      else interim += t;
+    }
+    userInput.value = finalTranscript + interim;
     autoResize(userInput);
   };
-  recognition.onend = () => { isRecording = false; micBtn.classList.remove("recording"); };
-  recognition.onerror = () => { isRecording = false; micBtn.classList.remove("recording"); };
+  recognition.onend = () => {
+    isRecording = false; micBtn.classList.remove("recording");
+    if (finalTranscript) { userInput.value = finalTranscript; autoResize(userInput); userInput.focus(); }
+  };
+  recognition.onerror = (e) => {
+    isRecording = false; micBtn.classList.remove("recording");
+    if (e.error !== "no-speech" && e.error !== "aborted") alert("Mic error: " + e.error);
+  };
   recognition.start();
 }
 
