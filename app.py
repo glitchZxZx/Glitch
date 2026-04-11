@@ -395,7 +395,8 @@ def chat():
                 model=SCOUT_MODEL,
                 messages=messages,
                 stream=True,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
+                extra_body={"repetition_penalty": 1.15}
             )
             for chunk in stream:
                 content = chunk.choices[0].delta.content
