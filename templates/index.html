@@ -482,47 +482,7 @@ body {
 .export-btn.visible { display: flex; }
 .export-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); }
 .export-btn svg { width: 14px; height: 14px; }
-@media (max-width: 700px) {
-  body { height: 100dvh; }
-  .sidebar {
-    position: fixed; inset: 0 auto 0 0; z-index: 300;
-    width: 280px; transform: translateX(-100%);
-    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-    display: flex !important;
-    box-shadow: 4px 0 32px rgba(0,0,0,0.5);
-  }
-  .sidebar.open { transform: translateX(0); }
-  .sidebar-overlay {
-    display: none; position: fixed; inset: 0; z-index: 299;
-    background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
-  }
-  .sidebar-overlay.open { display: block; }
-  .hamburger-btn { display: flex !important; }
-  .topbar { padding: 12px 14px; }
-  .topbar-model { display: none; }
-  .auth-btn-ghost { display: none; }
-  .auth-btn-solid { padding: 7px 12px; font-size: 12px; }
-  .user-info-name { display: none; }
-  .chat-area { padding: 16px 0 6px; }
-  .chat-inner { padding: 0 12px; gap: 14px; }
-  .msg-bubble { max-width: 90%; font-size: 14px; }
-  .input-area { padding: 8px 10px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
-  .input-row { padding: 8px 10px; gap: 6px; }
-  .input-row textarea { font-size: 16px; }
-  .icon-btn { width: 38px; height: 38px; }
-  .icon-btn svg { width: 16px; height: 16px; }
-  .send-btn { width: 38px; height: 38px; }
-  .reaction-bar { opacity: 1; }
-  .empty-avatar { width: 56px; height: 56px; font-size: 22px; }
-  .empty-state h2 { font-size: 19px; }
-  .feature-chips { gap: 6px; }
-  .feature-chip { font-size: 12px; padding: 6px 11px; }
-  .tos-banner { left: 12px; right: 12px; bottom: 14px; max-width: none; }
-  .export-btn { display: flex !important; }
-  .history-item { padding: 10px 10px; font-size: 13px; }
-  .delete-chat-btn { display: flex; }
-  .pin-chat-btn { display: flex; }
-}
+@media (max-width: 600px) { .sidebar { display: none; } }
 
 .tos-banner {
   position: fixed; bottom: 20px; right: 20px; z-index: 200;
@@ -578,8 +538,6 @@ body {
 </head>
 <body>
 
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
-
 <div class="sidebar">
   <div class="sidebar-header">
     <div class="glitch-avatar" id="sidebar-avatar">G</div>
@@ -602,11 +560,6 @@ body {
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="hamburger-btn" onclick="toggleSidebar()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-      </button>
       <div class="status-dot"></div>
       <span class="topbar-name">Glitch</span>
       <span class="topbar-model" id="topbar-model">llama-4-scout · vision</span>
@@ -1271,7 +1224,6 @@ function loadSession(i) {
     }
   });
   renderSidebar(); scrollBottom();
-  closeSidebar();
 }
 
 function newChat() {
@@ -1391,14 +1343,6 @@ async function loadServerChats() {
 }
 
 
-function toggleSidebar() {
-  document.querySelector(".sidebar").classList.toggle("open");
-  document.getElementById("sidebar-overlay").classList.toggle("open");
-}
-function closeSidebar() {
-  document.querySelector(".sidebar").classList.remove("open");
-  document.getElementById("sidebar-overlay").classList.remove("open");
-}
 
 let recognition = null;
 let isRecording = false;
