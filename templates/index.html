@@ -433,13 +433,57 @@ body {
 }
 .game-new-btn:hover { border-color: var(--purple-soft); color: var(--text); }
 
-@media (max-width: 600px) { .sidebar { display: none; } }
-
+.reaction-bar {
+  display: flex; gap: 4px; margin-top: 5px;
+  opacity: 0; transition: opacity 0.15s; height: 24px;
+}
+.msg-row.glitch:hover .reaction-bar,
+.reaction-bar:has(.reaction-btn.active-up),
+.reaction-bar:has(.reaction-btn.active-down) { opacity: 1; }
+.reaction-btn {
+  background: none; border: 1px solid var(--border);
+  border-radius: 20px; padding: 2px 8px; font-size: 12px;
+  color: var(--muted); cursor: pointer; transition: all 0.12s;
+  display: flex; align-items: center; gap: 3px; line-height: 1;
+}
+.reaction-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); background: rgba(124,110,240,0.06); }
+.reaction-btn.active-up { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.08); }
+.reaction-btn.active-down { border-color: var(--danger); color: var(--danger); background: rgba(226,75,74,0.08); }
+.mic-btn.recording {
+  border-color: var(--danger) !important; color: var(--danger) !important;
+  background: rgba(226,75,74,0.1) !important;
+  animation: pulse-mic 1.2s ease-in-out infinite;
+}
+@keyframes pulse-mic {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(226,75,74,0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(226,75,74,0); }
+}
+.pin-chat-btn {
+  width: 18px; height: 18px; background: none; border: none;
+  color: var(--muted); cursor: pointer; border-radius: 4px;
+  display: none; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 11px; line-height: 1;
+  transition: color 0.12s, background 0.12s;
+}
+.history-item:hover .pin-chat-btn { display: flex; }
+.pin-chat-btn.pinned { display: flex; color: var(--purple-soft); }
+.pin-chat-btn:hover { color: var(--purple-soft); background: rgba(124,110,240,0.1); }
+.history-item.pinned-item { border-left: 2px solid rgba(124,110,240,0.3); padding-left: 8px; }
+.pin-divider {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted); padding: 8px 14px 2px;
+}
+.export-btn {
+  width: 30px; height: 30px; background: none; border: 1px solid var(--border);
+  border-radius: 8px; color: var(--muted); cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  transition: border-color 0.12s, color 0.12s; flex-shrink: 0;
+}
+.export-btn.visible { display: flex; }
+.export-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); }
+.export-btn svg { width: 14px; height: 14px; }
 @media (max-width: 700px) {
-
   body { height: 100dvh; }
-
-  
   .sidebar {
     position: fixed; inset: 0 auto 0 0; z-index: 300;
     width: 280px; transform: translateX(-100%);
@@ -448,57 +492,33 @@ body {
     box-shadow: 4px 0 32px rgba(0,0,0,0.5);
   }
   .sidebar.open { transform: translateX(0); }
-
-  
   .sidebar-overlay {
     display: none; position: fixed; inset: 0; z-index: 299;
     background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
   }
   .sidebar-overlay.open { display: block; }
-
-  
   .hamburger-btn { display: flex !important; }
-
-  
   .topbar { padding: 12px 14px; }
   .topbar-model { display: none; }
   .auth-btn-ghost { display: none; }
   .auth-btn-solid { padding: 7px 12px; font-size: 12px; }
   .user-info-name { display: none; }
-
-  
   .chat-area { padding: 16px 0 6px; }
   .chat-inner { padding: 0 12px; gap: 14px; }
-
-  
   .msg-bubble { max-width: 90%; font-size: 14px; }
-
-  
-  .input-area { padding: 8px 10px 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .input-area { padding: 8px 10px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
   .input-row { padding: 8px 10px; gap: 6px; }
-  .input-row textarea { font-size: 16px; } 
-
-  
+  .input-row textarea { font-size: 16px; }
   .icon-btn { width: 38px; height: 38px; }
   .icon-btn svg { width: 16px; height: 16px; }
   .send-btn { width: 38px; height: 38px; }
-
-  
   .reaction-bar { opacity: 1; }
-
-  
   .empty-avatar { width: 56px; height: 56px; font-size: 22px; }
   .empty-state h2 { font-size: 19px; }
   .feature-chips { gap: 6px; }
   .feature-chip { font-size: 12px; padding: 6px 11px; }
-
-  
   .tos-banner { left: 12px; right: 12px; bottom: 14px; max-width: none; }
-
-  
   .export-btn { display: flex !important; }
-
-  
   .history-item { padding: 10px 10px; font-size: 13px; }
   .delete-chat-btn { display: flex; }
   .pin-chat-btn { display: flex; }
@@ -534,69 +554,6 @@ body {
   border-radius: 6px; transition: border-color .15s, background .15s;
 }
 .tos-banner-links a:hover { border-color: var(--purple); background: rgba(124,110,240,.08); }
-
-.reaction-bar {
-  display: flex; gap: 4px; margin-top: 5px;
-  opacity: 0; transition: opacity 0.15s; height: 24px;
-}
-.msg-row.glitch:hover .reaction-bar,
-.reaction-bar:has(.reaction-btn.active-up),
-.reaction-bar:has(.reaction-btn.active-down) { opacity: 1; }
-.reaction-btn {
-  background: none; border: 1px solid var(--border);
-  border-radius: 20px; padding: 2px 8px; font-size: 12px;
-  color: var(--muted); cursor: pointer; transition: all 0.12s;
-  display: flex; align-items: center; gap: 3px; line-height: 1;
-}
-.reaction-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); background: rgba(124,110,240,0.06); }
-.reaction-btn.active-up { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.08); }
-.reaction-btn.active-down { border-color: var(--danger); color: var(--danger); background: rgba(226,75,74,0.08); }
-
-.mic-btn.recording {
-  border-color: var(--danger) !important; color: var(--danger) !important;
-  background: rgba(226,75,74,0.1) !important;
-  animation: pulse-mic 1.2s ease-in-out infinite;
-}
-@keyframes pulse-mic {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(226,75,74,0.4); }
-  50% { box-shadow: 0 0 0 5px rgba(226,75,74,0); }
-}
-
-.pin-chat-btn {
-  width: 18px; height: 18px; background: none; border: none;
-  color: var(--muted); cursor: pointer; border-radius: 4px;
-  display: none; align-items: center; justify-content: center;
-  flex-shrink: 0; font-size: 11px; line-height: 1;
-  transition: color 0.12s, background 0.12s;
-}
-.history-item:hover .pin-chat-btn { display: flex; }
-.pin-chat-btn.pinned { display: flex; color: var(--purple-soft); }
-.pin-chat-btn:hover { color: var(--purple-soft); background: rgba(124,110,240,0.1); }
-.history-item.pinned-item { border-left: 2px solid rgba(124,110,240,0.3); padding-left: 8px; }
-.pin-divider {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--muted); padding: 8px 14px 2px;
-}
-
-.export-btn {
-  width: 30px; height: 30px; background: none; border: 1px solid var(--border);
-  border-radius: 8px; color: var(--muted); cursor: pointer;
-  display: none; align-items: center; justify-content: center;
-  transition: border-color 0.12s, color 0.12s; flex-shrink: 0;
-}
-.export-btn.visible { display: flex; }
-.export-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); }
-.export-btn svg { width: 14px; height: 14px; }
-
-.hamburger-btn {
-  display: none; width: 34px; height: 34px; background: none;
-  border: 1px solid var(--border); border-radius: 8px;
-  color: var(--muted); cursor: pointer; align-items: center;
-  justify-content: center; flex-shrink: 0; margin-right: 4px;
-  transition: border-color 0.12s, color 0.12s;
-}
-.hamburger-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); }
-.hamburger-btn svg { width: 16px; height: 16px; }
 
 .sidebar-footer { padding: 10px 12px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
 .status-link {
@@ -683,7 +640,290 @@ body {
             Play a game
           </button>
           <label class="feature-chip" style="cursor:pointer;">
-            <input type="file" accept="imageg, "<strong>$1</strong>")
+            <input type="file" accept="image/*" style="display:none;" onchange="handleImage(event)"/>
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            Attach image
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-box">
+      <div class="image-preview-strip" id="preview-strip" style="display:none;"></div>
+      <div class="input-row">
+        <textarea id="user-input" placeholder="Message Glitch..." rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+
+        
+        <button class="icon-btn think-btn" id="think-btn" title="Think harder" onclick="toggleThink()">
+          <div class="think-tooltip" id="think-tooltip">Think harder</div>
+          <div class="think-tooltip" id="think-tooltip">Think harder</div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+
+        
+
+        <button class="icon-btn mic-btn" id="mic-btn" title="Voice input" onclick="toggleVoice()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="11" rx="3"/>
+            <path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/>
+          </svg>
+        </button>
+        <button class="icon-btn" title="Play a game with Glitch" onclick="openGameModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="12" rx="4"/>
+            <path d="M6 12h4M8 10v4"/>
+            <circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="18" cy="13" r="1" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+
+        
+        <label class="icon-btn" title="Attach image" style="cursor:pointer;">
+          <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleImage(event)"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+        </label>
+
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="input-hint">Glitch can make mistakes — use your judgment.</div>
+    <div style="text-align:center; margin-top:6px; display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+      <a href="/privacy" target="_blank" style="font-size:11px; color:#6b6b80; text-decoration:none;">Privacy Policy</a>
+      <a href="/terms" target="_blank" style="font-size:11px; color:#6b6b80; text-decoration:none;">Terms of Service</a>
+      <a href="/imprint" target="_blank" style="font-size:11px; color:#6b6b80; text-decoration:none;">Imprint</a>
+    </div>
+  </div>
+</div>
+
+<div class="paste-hint" id="paste-hint">📋 Image pasted!</div>
+
+<div class="tos-banner" id="tos-banner" style="display:none;">
+  <div class="tos-banner-top">
+    <span class="tos-banner-title">📋 We updated our policies</span>
+    <button class="tos-banner-close" onclick="dismissTosBanner()" title="Dismiss">×</button>
+  </div>
+  <div class="tos-banner-body">
+    Chat history is now saved to your account when you're logged in. We've updated our Privacy Policy to reflect this.
+  </div>
+  <div class="tos-banner-links">
+    <a href="/privacy" target="_blank">Privacy Policy</a>
+    <a href="/terms" target="_blank">Terms</a>
+  </div>
+</div>
+
+<div class="modal-overlay" id="game-modal" onclick="closeGameModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-title">Play with Glitch 🎮</div>
+        <div class="modal-sub" id="game-modal-sub">Rock Paper Scissors</div>
+      </div>
+      <button class="modal-close" onclick="closeGameModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="game-picker">
+        <div class="game-tab active" onclick="switchGame('rps')" id="tab-rps">✊ RPS</div>
+        <div class="game-tab" onclick="switchGame('c4')" id="tab-c4">🔴 Connect 4</div>
+      </div>
+
+      
+      <div id="game-rps">
+        <div class="rps-scoreboard">
+          <div class="rps-player">
+            <span class="rps-player-name">You</span>
+            <span class="rps-player-score" id="rps-you">0</span>
+          </div>
+          <div class="rps-vs">vs</div>
+          <div class="rps-player">
+            <span class="rps-player-name">Glitch</span>
+            <span class="rps-player-score" id="rps-glitch">0</span>
+          </div>
+        </div>
+        <div class="rps-result" id="rps-result">
+          <span class="rps-prompt">pick your move 👇</span>
+        </div>
+        <div class="rps-choices">
+          <button class="rps-btn" onclick="playRPS('rock')">✊<span class="rps-btn-label">Rock</span></button>
+          <button class="rps-btn" onclick="playRPS('paper')">✋<span class="rps-btn-label">Paper</span></button>
+          <button class="rps-btn" onclick="playRPS('scissors')">✌️<span class="rps-btn-label">Scissors</span></button>
+        </div>
+      </div>
+
+      
+      <div id="game-c4" style="display:none;">
+        <div class="c4-status" id="c4-status">Your turn 🔴</div>
+        <div class="c4-board" id="c4-board"></div>
+        <div class="c4-legend">
+          <span><div class="c4-dot" style="background:#f97316"></div> You</span>
+          <span><div class="c4-dot" style="background:#facc15"></div> Glitch</span>
+        </div>
+      </div>
+
+      <button class="game-new-btn" onclick="resetCurrentGame()">↺ new game</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const AVATAR_URL = "/static/glitch_pfp.jpg";
+
+let sessions = [];
+let currentIndex = -1;
+let isLoggedIn = false;
+let history = [];
+let pendingImages = [];
+let thinking = false;
+let thinkMode = false;
+
+ init think mode UI
+document.getElementById("think-tooltip").textContent = "Think harder";
+
+const chatInner   = document.getElementById("chat-inner");
+const chatArea    = document.getElementById("chat-area");
+const userInput   = document.getElementById("user-input");
+const sendBtn     = document.getElementById("send-btn");
+const historyList = document.getElementById("history-list");
+const previewStrip = document.getElementById("preview-strip");
+const topbarModel  = document.getElementById("topbar-model");
+const thinkBtn     = document.getElementById("think-btn");
+
+function setAvatars() {
+  document.querySelectorAll("#sidebar-avatar, #empty-avatar, #username-modal-avatar, .msg-meta-avatar.glitch-av").forEach(el => {
+    if (el.querySelector("img")) return;  already set
+    const img = new Image();
+    img.src = AVATAR_URL;
+    img.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:50%;";
+    img.onload = () => { el.textContent = ""; el.appendChild(img); };
+  });
+}
+setAvatars();
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 180) + "px";
+}
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function scrollBottom() { chatArea.scrollTop = chatArea.scrollHeight; }
+
+function toggleThink() {
+  thinkMode = !thinkMode;
+  thinkBtn.classList.toggle("active", thinkMode);
+  document.getElementById("think-tooltip").textContent = thinkMode ? "Back to fast mode" : "Think harder";
+  updateTopbarModel();
+}
+function updateTopbarModel() {
+  if (thinkMode) {
+    topbarModel.textContent = "Think mode";
+    topbarModel.classList.add("think-mode");
+  } else {
+    const hasImage = pendingImages.length > 0;
+    topbarModel.textContent = hasImage ? "Vision mode" : "Fast mode";
+    topbarModel.classList.remove("think-mode");
+  }
+}
+
+document.addEventListener("paste", (e) => {
+  const items = Array.from(e.clipboardData?.items || []);
+  const imgItem = items.find(i => i.type.startsWith("image/"));
+  if (!imgItem) return;
+  e.preventDefault();
+  const file = imgItem.getAsFile();
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingImages.push({ base64: reader.result.split(",")[1], mime: file.type, dataUrl: reader.result });
+    renderPreviews();
+    const hint = document.getElementById("paste-hint");
+    hint.classList.add("show");
+    setTimeout(() => hint.classList.remove("show"), 1800);
+    updateTopbarModel();
+  };
+  reader.readAsDataURL(file);
+});
+
+function renderMarkdown(text) {
+  const lines = text.split("\n");
+  let html = "";
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const fenceMatch = line.match(/^```(\w*)$/);
+    if (fenceMatch) {
+      const lang = fenceMatch[1] || "code";
+      let code = "";
+      i++;
+      while (i < lines.length && !lines[i].startsWith("```")) {
+        code += lines[i] + "\n";
+        i++;
+      }
+      i++;  skip closing ```
+      const escaped = escHtml(code.trimEnd());
+      const id = "cb" + Math.random().toString(36).slice(2);
+      html += `<div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">${escHtml(lang)}</span>
+          <button class="copy-btn" onclick="copyCode('${id}',this)">Copy</button>
+        </div>
+        <pre><code class="block-code" id="${id}">${escaped}</code></pre>
+      </div>`;
+      continue;
+    }
+    const h3 = line.match(/^### (.+)/);
+    if (h3) { html += `<h3>${inlineMd(h3[1])}</h3>`; i++; continue; }
+    const h2 = line.match(/^## (.+)/);
+    if (h2) { html += `<h2>${inlineMd(h2[1])}</h2>`; i++; continue; }
+    const h1 = line.match(/^# (.+)/);
+    if (h1) { html += `<h1>${inlineMd(h1[1])}</h1>`; i++; continue; }
+    if (/^---+$/.test(line.trim())) { html += "<hr>"; i++; continue; }
+    if (line.startsWith("> ")) {
+      html += `<blockquote>${inlineMd(line.slice(2))}</blockquote>`; i++; continue;
+    }
+    if (/^[\-\*] /.test(line)) {
+      html += "<ul>";
+      while (i < lines.length && /^[\-\*] /.test(lines[i])) {
+        html += `<li>${inlineMd(lines[i].replace(/^[\-\*] /, ""))}</li>`;
+        i++;
+      }
+      html += "</ul>";
+      continue;
+    }
+    if (/^\d+\. /.test(line)) {
+      html += "<ol>";
+      while (i < lines.length && /^\d+\. /.test(lines[i])) {
+        html += `<li>${inlineMd(lines[i].replace(/^\d+\. /, ""))}</li>`;
+        i++;
+      }
+      html += "</ol>";
+      continue;
+    }
+    if (line.trim() === "") { html += "<br>"; i++; continue; }
+    html += `<p>${inlineMd(line)}</p>`;
+    i++;
+  }
+
+  return html;
+}
+
+function inlineMd(text) {
+  return escHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
@@ -762,7 +1002,7 @@ function addMessage(role, text, imageDataUrl) {
     row.appendChild(bubble);
     chatInner.appendChild(row);
     scrollBottom();
-    return null; 
+    return null;  user messages don't need live update handle
   } else {
     row.appendChild(meta);
     row.appendChild(bubble);
@@ -858,7 +1098,7 @@ async function sendMessage() {
       if (!searchDetected) {
         if (rawBuffer.startsWith("§SEARCH:")) {
           const end = rawBuffer.indexOf("§\n");
-          if (end === -1) continue; 
+          if (end === -1) continue;  wait for full signal
           const query = rawBuffer.slice(8, end);
           rawBuffer = rawBuffer.slice(end + 2);
           searchDetected = true;
@@ -887,7 +1127,6 @@ async function sendMessage() {
   history.push({ role: "assistant", content: reply });
   sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
 
-  
   if (history.length === 2) {
     (async () => {
       try {
@@ -901,7 +1140,7 @@ async function sendMessage() {
           sessions[currentIndex].title = td.title;
           saveAndRenderSidebar();
         }
-      } catch {  }
+      } catch { }
     })();
   }
 
@@ -973,7 +1212,6 @@ async function deleteChat(i, e) {
 function togglePin(i, e) {
   e.stopPropagation();
   sessions[i].pinned = !sessions[i].pinned;
-  
   const active = sessions[currentIndex];
   sessions = [...sessions.filter(s => s.pinned), ...sessions.filter(s => !s.pinned)];
   currentIndex = sessions.indexOf(active);
@@ -984,44 +1222,37 @@ function renderSidebar() {
   historyList.innerHTML = "";
   const pinned   = sessions.filter(s => s.pinned);
   const unpinned = sessions.filter(s => !s.pinned);
-
   function makeItem(s, i) {
     const item = document.createElement("div");
     item.className = "history-item" + (i === currentIndex ? " active" : "") + (s.pinned ? " pinned-item" : "");
     const titleSpan = document.createElement("span");
     titleSpan.className = "history-item-title";
     titleSpan.textContent = s.title;
-
     const pinBtn = document.createElement("button");
     pinBtn.className = "pin-chat-btn" + (s.pinned ? " pinned" : "");
     pinBtn.title = s.pinned ? "Unpin" : "Pin";
     pinBtn.textContent = "📌";
     pinBtn.onclick = (e) => togglePin(i, e);
-
     const delBtn = document.createElement("button");
     delBtn.className = "delete-chat-btn";
     delBtn.innerHTML = "×"; delBtn.title = "Delete chat";
     delBtn.onclick = (e) => deleteChat(i, e);
-
     item.appendChild(titleSpan); item.appendChild(pinBtn); item.appendChild(delBtn);
     item.onclick = () => loadSession(i);
     historyList.appendChild(item);
   }
-
   if (pinned.length) {
-    const label = document.createElement("div");
-    label.className = "pin-divider"; label.textContent = "Pinned";
-    historyList.appendChild(label);
+    const l1 = document.createElement("div");
+    l1.className = "pin-divider"; l1.textContent = "Pinned";
+    historyList.appendChild(l1);
     pinned.forEach(s => makeItem(s, sessions.indexOf(s)));
     if (unpinned.length) {
-      const label2 = document.createElement("div");
-      label2.className = "pin-divider"; label2.textContent = "Recent";
-      historyList.appendChild(label2);
+      const l2 = document.createElement("div");
+      l2.className = "pin-divider"; l2.textContent = "Recent";
+      historyList.appendChild(l2);
     }
   }
   unpinned.forEach(s => makeItem(s, sessions.indexOf(s)));
-
-  
   const exportBtn = document.getElementById("export-btn");
   if (exportBtn) exportBtn.classList.toggle("visible", currentIndex >= 0 && !!sessions[currentIndex]?.history?.length);
 }
@@ -1144,6 +1375,22 @@ function resetCurrentGame(){
   } else { initC4(); }
 }
 
+ ── Username + auth state ────────────────────────────────────────────────────
+let currentUsername = "";
+
+async function loadServerChats() {
+  try {
+    const res = await fetch("/api/chats");
+    const data = await res.json();
+    isLoggedIn = data.loggedIn || false;
+    sessions = data.chats || [];
+  } catch {
+    sessions = [];
+  }
+  renderSidebar();
+}
+
+
 function toggleSidebar() {
   document.querySelector(".sidebar").classList.toggle("open");
   document.getElementById("sidebar-overlay").classList.toggle("open");
@@ -1166,9 +1413,7 @@ function toggleVoice() {
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
   recognition.lang = "en-US";
-
   let finalTranscript = "";
-
   recognition.onstart = () => { isRecording = true; micBtn.classList.add("recording"); finalTranscript = ""; };
   recognition.onresult = (e) => {
     let interim = "";
@@ -1194,16 +1439,16 @@ function toggleVoice() {
 function exportChat() {
   if (currentIndex < 0 || !sessions[currentIndex]) return;
   const chat = sessions[currentIndex];
-  let md = `# ${chat.title}\n\n`;
+  let md = "# " + chat.title + "\n\n";
   chat.history.forEach(m => {
     if (typeof m.content !== "string") return;
     const role = m.role === "user" ? "**You**" : "**Glitch**";
-    md += `${role}\n\n${m.content}\n\n---\n\n`;
+    md += role + "\n\n" + m.content + "\n\n---\n\n";
   });
   const blob = new Blob([md], { type: "text/markdown" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `${chat.title.replace(/[^\w\s\-]/g, "").trim() || "glitch-chat"}.md`;
+  a.download = (chat.title.replace(/[^\w\s\-]/g, "").trim() || "glitch-chat") + ".md";
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -1218,7 +1463,6 @@ function addReactionBar(row) {
     btn.onclick = () => {
       const isUp = idx === 0;
       const activeClass = isUp ? "active-up" : "active-down";
-      const otherClass  = isUp ? "active-down" : "active-up";
       const wasActive = btn.classList.contains(activeClass);
       bar.querySelectorAll(".reaction-btn").forEach(b => b.classList.remove("active-up", "active-down"));
       if (!wasActive) btn.classList.add(activeClass);
@@ -1226,20 +1470,6 @@ function addReactionBar(row) {
     bar.appendChild(btn);
   });
   row.appendChild(bar);
-}
-
-let currentUsername = "";
-
-async function loadServerChats() {
-  try {
-    const res = await fetch("/api/chats");
-    const data = await res.json();
-    isLoggedIn = data.loggedIn || false;
-    sessions = data.chats || [];
-  } catch {
-    sessions = [];
-  }
-  renderSidebar();
 }
 
 async function initUsername() {
@@ -1250,7 +1480,7 @@ async function initUsername() {
       currentUsername = data.username;
       isLoggedIn = true;
 
-      
+       Show username in sidebar header
       const existing = document.getElementById("sidebar-username");
       if (!existing) {
         const span = document.createElement("span");
@@ -1260,7 +1490,7 @@ async function initUsername() {
         document.querySelector(".sidebar-header").appendChild(span);
       }
 
-      
+       Replace Log in / Sign up buttons with user avatar + name
       const authEl = document.getElementById("topbar-auth");
       if (authEl) {
         const letter = currentUsername.charAt(0).toUpperCase();
@@ -1274,12 +1504,13 @@ async function initUsername() {
     }
   } catch {  }
 
-  
+   Always load chats from server (empty if not logged in)
   await loadServerChats();
 }
 
 initUsername();
 
+ ── ToS update banner ────────────────────────────────────────────────────────
 (function() {
   const COOKIE = "glitch_tos_v2";
   function hasCookie(name) {
@@ -1306,6 +1537,7 @@ initUsername();
   };
 })();
 
+ ── Status page fetch ────────────────────────────────────────────────────────
 (async function fetchStatus() {
   try {
     const res = await fetch("https://stats.uptimerobot.com/api/getMonitorList/tKeBHHLwk5");
@@ -1322,7 +1554,7 @@ initUsername();
       dot.className = "status-indicator degraded";
       label.textContent = "Partial outage";
     }
-    
+     else: default green "All systems operational"
   } catch {  }
 })();
 </script>
