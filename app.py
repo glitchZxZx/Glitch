@@ -327,6 +327,36 @@ def imprint():
     return render_template("imprint.html")
 
 
+# ── AI title generation ───────────────────────────────────────────────────────
+@app.route("/api/title", methods=["POST"])
+def generate_title():
+    data      = request.get_json()
+    user_msg  = (data.get("userMsg") or "")[:200]
+    ai_msg    = (data.get("aiMsg")   or "")[:200]
+    if not user_msg:
+        return jsonify({"title": "New chat"})
+    try:
+        resp = client.chat.completions.create(
+            model=SCOUT_MODEL,
+            messages=[
+                {"role": "system", "content": (
+                    "Generate a very short chat title (3–5 words max). "
+                    "No quotes, no punctuation at end, no emoji. "
+                    "Output ONLY the title — nothing else."
+                )},
+                {"role": "user", "content": f"User: {user_msg}\nAssistant: {ai_msg}"}
+            ],
+            max_tokens=16
+        )
+        title = resp.choices[0].message.content.strip().strip("\"'").strip()
+        if len(title) > 52:
+            title = title[:52]
+        return jsonify({"title": title or user_msg[:32]})
+    except Exception:
+        short = user_msg[:32] + ("…" if len(user_msg) > 32 else "")
+        return jsonify({"title": short})
+
+
 # ── Chat route ────────────────────────────────────────────────────────────────
 @app.route("/chat", methods=["POST"])
 def chat():

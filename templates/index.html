@@ -380,7 +380,6 @@ body {
 .game-tab:hover { color: var(--text); }
 .game-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
 
-/* RPS */
 .rps-scoreboard {
   display: grid; grid-template-columns: 1fr auto 1fr;
   align-items: center; gap: 8px; margin-bottom: 14px;
@@ -417,7 +416,6 @@ body {
 .rps-btn:hover { transform: translateY(-3px); border-color: var(--purple-soft); background: var(--user-bg); }
 .rps-btn:active { transform: scale(0.94); }
 
-/* Connect 4 */
 .c4-status {
   text-align: center; font-size: 13px; font-weight: 500; color: var(--text);
   margin-bottom: 10px; min-height: 20px;
@@ -445,6 +443,86 @@ body {
   color: var(--muted); font-size: 12.5px; cursor: pointer; margin-top: 14px; transition: all 0.15s;
 }
 .game-new-btn:hover { border-color: var(--purple-soft); color: var(--text); }
+
+/* Tic-Tac-Toe */
+.ttt-board {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin: 12px 0;
+}
+.ttt-cell {
+  aspect-ratio: 1; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; font-size: 30px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background 0.12s, transform 0.1s, border-color 0.15s;
+}
+.ttt-cell:hover:not(.taken) { background: var(--user-bg); border-color: var(--purple-soft); transform: scale(1.04); }
+.ttt-cell.taken { cursor: default; }
+.ttt-cell.win { border-color: var(--purple); background: rgba(124,110,240,0.18); animation: cellPop 0.4s ease; }
+.ttt-status { text-align: center; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 10px; min-height: 20px; }
+
+/* Word Guess (Wordle-style) */
+.wg-grid { display: flex; flex-direction: column; gap: 5px; margin: 10px 0; }
+.wg-row { display: flex; gap: 5px; justify-content: center; }
+.wg-tile {
+  width: 42px; height: 42px; border: 2px solid var(--border);
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; color: var(--text); text-transform: uppercase;
+  transition: border-color 0.1s; background: var(--surface2);
+}
+.wg-tile.correct { background: #16a34a; border-color: #16a34a; color: #fff; }
+.wg-tile.present { background: #ca8a04; border-color: #ca8a04; color: #fff; }
+.wg-tile.absent  { background: #374151; border-color: #374151; color: #aaa; }
+.wg-tile.active-cursor { border-color: var(--purple-soft); }
+@keyframes wg-pop { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
+.wg-tile.pop { animation: wg-pop 0.15s ease; }
+@keyframes wg-shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+.wg-row.shake { animation: wg-shake 0.4s ease; }
+.wg-keyboard { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.wg-kb-row { display: flex; gap: 4px; }
+.wg-key {
+  min-width: 28px; height: 36px; padding: 0 6px; border-radius: 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-size: 11px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.12s;
+  text-transform: uppercase;
+}
+.wg-key:hover { border-color: var(--purple-soft); }
+.wg-key.correct { background: #16a34a; border-color: #16a34a; color: #fff; }
+.wg-key.present { background: #ca8a04; border-color: #ca8a04; color: #fff; }
+.wg-key.absent  { background: #1f2937; border-color: #374151; color: #6b7280; }
+.wg-key.wide { min-width: 44px; font-size: 10px; }
+.wg-hint { text-align: center; font-size: 12px; color: var(--muted); min-height: 16px; margin-bottom: 6px; }
+
+/* Thumbs feedback on AI messages */
+.msg-feedback {
+  display: flex; gap: 4px; margin-top: 4px;
+  opacity: 0; transition: opacity 0.15s; pointer-events: none;
+}
+.msg-row.glitch:hover .msg-feedback { opacity: 1; pointer-events: all; }
+.feedback-btn {
+  width: 26px; height: 26px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 7px;
+  color: var(--muted); cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s; line-height: 1;
+}
+.feedback-btn:hover { border-color: var(--purple-soft); color: var(--text); background: var(--user-bg); }
+.feedback-btn.active-up   { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.1); }
+.feedback-btn.active-down { border-color: var(--danger); color: var(--danger); background: rgba(226,75,74,0.1); }
+
+/* Pinned chats */
+.pin-chat-btn {
+  width: 18px; height: 18px; background: none; border: none;
+  color: var(--muted); cursor: pointer; border-radius: 4px;
+  display: none; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 11px; line-height: 1;
+  transition: color 0.12s;
+}
+.history-item:hover .pin-chat-btn { display: flex; }
+.history-item.pinned .pin-chat-btn { display: flex; color: var(--purple-soft); }
+.pin-chat-btn:hover { color: var(--purple-soft); }
+.history-label-pin { display: none; }
+.has-pinned .history-label-pin { display: block; }
+.sidebar-section-gap { height: 8px; }
 
 @media (max-width: 600px) { .sidebar { display: none; } }
 
@@ -615,8 +693,6 @@ body {
 </div>
 
 <div class="paste-hint" id="paste-hint">📋 Image pasted!</div>
-
-<!-- ToS update banner — shown once via cookie -->
 <div class="tos-banner" id="tos-banner" style="display:none;">
   <div class="tos-banner-top">
     <span class="tos-banner-title">📋 We updated our policies</span>
@@ -644,9 +720,9 @@ body {
       <div class="game-picker">
         <div class="game-tab active" onclick="switchGame('rps')" id="tab-rps">✊ RPS</div>
         <div class="game-tab" onclick="switchGame('c4')" id="tab-c4">🔴 Connect 4</div>
+        <div class="game-tab" onclick="switchGame('ttt')" id="tab-ttt">⭕ Tic-Tac-Toe</div>
+        <div class="game-tab" onclick="switchGame('wg')" id="tab-wg">💬 Word Guess</div>
       </div>
-
-      
       <div id="game-rps">
         <div class="rps-scoreboard">
           <div class="rps-player">
@@ -668,8 +744,6 @@ body {
           <button class="rps-btn" onclick="playRPS('scissors')">✌️<span class="rps-btn-label">Scissors</span></button>
         </div>
       </div>
-
-      
       <div id="game-c4" style="display:none;">
         <div class="c4-status" id="c4-status">Your turn 🔴</div>
         <div class="c4-board" id="c4-board"></div>
@@ -677,6 +751,15 @@ body {
           <span><div class="c4-dot" style="background:#f97316"></div> You</span>
           <span><div class="c4-dot" style="background:#facc15"></div> Glitch</span>
         </div>
+      </div>
+      <div id="game-ttt" style="display:none;">
+        <div class="ttt-status" id="ttt-status">Your turn (you're ✗)</div>
+        <div class="ttt-board" id="ttt-board"></div>
+      </div>
+      <div id="game-wg" style="display:none;">
+        <div class="wg-hint" id="wg-hint">Guess the 5-letter word</div>
+        <div class="wg-grid" id="wg-grid"></div>
+        <div class="wg-keyboard" id="wg-keyboard"></div>
       </div>
 
       <button class="game-new-btn" onclick="resetCurrentGame()">↺ new game</button>
@@ -910,15 +993,30 @@ function addMessage(role, text, imageDataUrl) {
     scrollBottom();
     return null; // user messages don't need live update handle
   } else {
+    const feedbackRow = document.createElement("div");
+    feedbackRow.className = "msg-feedback";
+    const upBtn = document.createElement("button");
+    upBtn.className = "feedback-btn"; upBtn.title = "Good response"; upBtn.textContent = "👍";
+    const downBtn = document.createElement("button");
+    downBtn.className = "feedback-btn"; downBtn.title = "Bad response"; downBtn.textContent = "👎";
+    upBtn.onclick = () => {
+      upBtn.classList.toggle("active-up");
+      downBtn.classList.remove("active-down");
+    };
+    downBtn.onclick = () => {
+      downBtn.classList.toggle("active-down");
+      upBtn.classList.remove("active-up");
+    };
+    feedbackRow.appendChild(upBtn); feedbackRow.appendChild(downBtn);
     row.appendChild(meta);
     row.appendChild(bubble);
+    row.appendChild(feedbackRow);
     chatInner.appendChild(row);
     scrollBottom();
     return bubble;
   }
 }
 
-/* Update glitch bubble content with markdown during streaming */
 function updateBubble(bubble, text) {
   bubble.innerHTML = renderMarkdown(text);
 }
@@ -969,7 +1067,7 @@ async function sendMessage() {
 
   if (currentIndex === -1) {
     const title = text.length > 32 ? text.slice(0, 32) + "…" : (text || "Image");
-    sessions.unshift({ id: Date.now().toString(), title, history: [] });
+    sessions.unshift({ id: Date.now().toString(), title, history: [], pinned: false });
     currentIndex = 0;
     renderSidebar();
   }
@@ -1032,6 +1130,23 @@ async function sendMessage() {
   cursor.remove();
   history.push({ role: "assistant", content: reply });
   sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
+
+  // Generate AI title for brand-new chats (only 1 exchange so far)
+  const isNewChat = history.filter(m => m.role === "assistant").length === 1;
+  if (isNewChat && text) {
+    try {
+      const titleRes = await fetch("/api/title", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userMsg: text, aiMsg: reply.slice(0, 200) })
+      });
+      const titleData = await titleRes.json();
+      if (titleData.title) {
+        sessions[currentIndex].title = titleData.title;
+      }
+    } catch { /* fall back to existing title */ }
+  }
+
   saveAndRenderSidebar();
   thinking = false; sendBtn.disabled = false; userInput.focus();
   updateTopbarModel();
@@ -1099,20 +1214,56 @@ async function deleteChat(i, e) {
 
 function renderSidebar() {
   historyList.innerHTML = "";
-  sessions.forEach((s, i) => {
+  const pinned   = sessions.map((s,i)=>({s,i})).filter(({s})=>s.pinned);
+  const unpinned = sessions.map((s,i)=>({s,i})).filter(({s})=>!s.pinned);
+
+  function makeItem({s, i}) {
     const item = document.createElement("div");
-    item.className = "history-item" + (i === currentIndex ? " active" : "");
+    item.className = "history-item" + (i === currentIndex ? " active" : "") + (s.pinned ? " pinned" : "");
     const titleSpan = document.createElement("span");
     titleSpan.className = "history-item-title";
     titleSpan.textContent = s.title;
+    const pinBtn = document.createElement("button");
+    pinBtn.className = "pin-chat-btn";
+    pinBtn.title = s.pinned ? "Unpin" : "Pin chat";
+    pinBtn.innerHTML = s.pinned ? "📌" : "📍";
+    pinBtn.onclick = (e) => { e.stopPropagation(); togglePin(i); };
     const delBtn = document.createElement("button");
     delBtn.className = "delete-chat-btn";
     delBtn.innerHTML = "×"; delBtn.title = "Delete chat";
     delBtn.onclick = (e) => deleteChat(i, e);
-    item.appendChild(titleSpan); item.appendChild(delBtn);
+    item.appendChild(titleSpan); item.appendChild(pinBtn); item.appendChild(delBtn);
     item.onclick = () => loadSession(i);
-    historyList.appendChild(item);
-  });
+    return item;
+  }
+
+  if (pinned.length > 0) {
+    const pinnedLabel = document.createElement("div");
+    pinnedLabel.className = "history-label";
+    pinnedLabel.textContent = "Pinned";
+    historyList.appendChild(pinnedLabel);
+    pinned.forEach(x => historyList.appendChild(makeItem(x)));
+    const gap = document.createElement("div");
+    gap.className = "sidebar-section-gap";
+    historyList.appendChild(gap);
+    const recentLabel = document.createElement("div");
+    recentLabel.className = "history-label";
+    recentLabel.textContent = "Recent";
+    historyList.appendChild(recentLabel);
+  }
+  unpinned.forEach(x => historyList.appendChild(makeItem(x)));
+}
+
+function togglePin(i) {
+  sessions[i].pinned = !sessions[i].pinned;
+  renderSidebar();
+  if (isLoggedIn && sessions[i]?.id) {
+    fetch("/api/chats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat: sessions[i] })
+    }).catch(()=>{});
+  }
 }
 
 function loadSession(i) {
@@ -1150,14 +1301,14 @@ function closeGameModalOutside(e) { if (e.target === document.getElementById("ga
 let currentGame = "rps";
 function switchGame(game) {
   currentGame = game;
-  document.getElementById("game-rps").style.display = game === "rps" ? "block" : "none";
-  document.getElementById("game-c4").style.display  = game === "c4"  ? "block" : "none";
-  document.getElementById("tab-rps").classList.toggle("active", game === "rps");
-  document.getElementById("tab-c4").classList.toggle("active", game === "c4");
-  document.getElementById("game-modal-sub").textContent = game === "rps" ? "Rock Paper Scissors" : "Connect 4 — you go first";
+  ["rps","c4","ttt","wg"].forEach(g => {
+    document.getElementById("game-"+g).style.display = g === game ? "block" : "none";
+    document.getElementById("tab-"+g).classList.toggle("active", g === game);
+  });
+  const subs = {rps:"Rock Paper Scissors",c4:"Connect 4",ttt:"Tic-Tac-Toe",wg:"Word Guess"};
+  document.getElementById("game-modal-sub").textContent = subs[game] || "";
 }
 
-/* RPS */
 let rpsYou = 0, rpsGlitch = 0, rpsTotal = 0;
 const rpsChoices = ["rock", "scissors", "paper"];
 const rpsEmoji = { rock: "✊", paper: "✋", scissors: "✌️" };
@@ -1184,7 +1335,6 @@ function playRPS(userChoice) {
     `<div class="rps-result-inner"><div class="rps-emojis">${rpsEmoji[userChoice]} ${rpsEmoji[glitchChoice]}</div><div class="rps-outcome">${label}</div><div class="rps-quip">${quip}</div></div>`;
 }
 
-/* Connect 4 */
 const ROWS=6, COLS=7;
 let c4Board, c4Turn, c4Over;
 function initC4() {
@@ -1249,10 +1399,225 @@ function resetCurrentGame(){
     document.getElementById("rps-you").textContent="0";
     document.getElementById("rps-glitch").textContent="0";
     document.getElementById("rps-result").innerHTML='<span class="rps-prompt">pick your move 👇</span>';
-  } else { initC4(); }
+  } else if(currentGame==="c4"){
+    initC4();
+  } else if(currentGame==="ttt"){
+    initTTT();
+  } else if(currentGame==="wg"){
+    initWG();
+  }
 }
 
-// ── Username + auth state ────────────────────────────────────────────────────
+let tttBoard, tttOver;
+function initTTT() {
+  tttBoard = Array(9).fill(null); tttOver = false;
+  document.getElementById("ttt-status").textContent = "Your turn (you're ✗)";
+  renderTTT();
+}
+function renderTTT() {
+  const el = document.getElementById("ttt-board"); el.innerHTML = "";
+  tttBoard.forEach((cell, i) => {
+    const c = document.createElement("div");
+    c.className = "ttt-cell" + (cell ? " taken" : "");
+    c.textContent = cell || "";
+    if (!tttOver && !cell) c.onclick = () => tttMove(i);
+    el.appendChild(c);
+  });
+}
+function tttMove(i) {
+  if (tttOver || tttBoard[i]) return;
+  tttBoard[i] = "✗";
+  let win = tttCheck("✗");
+  if (win) { tttHighlight(win); document.getElementById("ttt-status").textContent = "You win 🎉"; tttOver = true; renderTTT(); return; }
+  if (tttBoard.every(c => c)) { document.getElementById("ttt-status").textContent = "Draw 🤝"; tttOver = true; renderTTT(); return; }
+  document.getElementById("ttt-status").textContent = "Glitch is thinking...";
+  renderTTT();
+  setTimeout(() => {
+    const ai = tttBest();
+    tttBoard[ai] = "◯";
+    win = tttCheck("◯");
+    if (win) { tttHighlight(win); document.getElementById("ttt-status").textContent = "Glitch wins 😌"; tttOver = true; }
+    else if (tttBoard.every(c => c)) { document.getElementById("ttt-status").textContent = "Draw 🤝"; tttOver = true; }
+    else document.getElementById("ttt-status").textContent = "Your turn (you're ✗)";
+    renderTTT();
+    if (win) tttHighlight(win);
+  }, 400);
+}
+function tttCheck(p) {
+  const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  return wins.find(w => w.every(i => tttBoard[i] === p)) || null;
+}
+function tttHighlight(cells) {
+  const el = document.getElementById("ttt-board");
+  cells.forEach(i => el.children[i].classList.add("win"));
+}
+function tttScore(b, p) {
+  const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  if (wins.some(w => w.every(i => b[i] === "◯"))) return 10;
+  if (wins.some(w => w.every(i => b[i] === "✗"))) return -10;
+  return 0;
+}
+function tttMinimax(b, depth, isMax) {
+  const s = tttScore(b);
+  if (s || depth === 0 || b.every(c => c)) return s;
+  if (isMax) {
+    let best = -Infinity;
+    b.forEach((c,i) => { if(!c){ b[i]="◯"; best=Math.max(best,tttMinimax(b,depth-1,false)); b[i]=null; } });
+    return best;
+  } else {
+    let best = Infinity;
+    b.forEach((c,i) => { if(!c){ b[i]="✗"; best=Math.min(best,tttMinimax(b,depth-1,true)); b[i]=null; } });
+    return best;
+  }
+}
+function tttBest() {
+  let best = -Infinity, move = -1;
+  tttBoard.forEach((c,i) => {
+    if (!c) {
+      const b = [...tttBoard]; b[i] = "◯";
+      const s = tttMinimax(b, 6, false);
+      if (s > best) { best = s; move = i; }
+    }
+  });
+  return move;
+}
+initTTT();
+
+const WG_WORDS = ["crane","slate","flame","brush","dwarf","crisp","blunt","fizzy","blaze","clamp","flesh","grind","stomp","pluck","swirl","quirk","vapor","abbey","bliss","churn","dread","elbow","frisk","grasp","havoc","inlet","joust","knelt","lodge","manga","notch","olive","plumb","quest","rebel","snare","thyme","ulcer","vicar","waltz","xenon","yacht","zesty","adorn","brisk","camel","dunce","ember","flint","grout","haste"];
+let wgWord, wgGuesses, wgCurrentRow, wgCurrentCol, wgDone;
+const WG_ROWS = 6, WG_COLS = 5;
+
+function initWG() {
+  wgWord = WG_WORDS[Math.floor(Math.random() * WG_WORDS.length)];
+  wgGuesses = Array.from({length:WG_ROWS}, () => Array(WG_COLS).fill(""));
+  wgCurrentRow = 0; wgCurrentCol = 0; wgDone = false;
+  document.getElementById("wg-hint").textContent = "Guess the 5-letter word";
+  renderWGGrid(); renderWGKeyboard();
+}
+
+function renderWGGrid() {
+  const grid = document.getElementById("wg-grid"); grid.innerHTML = "";
+  for (let r = 0; r < WG_ROWS; r++) {
+    const row = document.createElement("div"); row.className = "wg-row"; row.id = "wg-row-"+r;
+    for (let c = 0; c < WG_COLS; c++) {
+      const tile = document.createElement("div"); tile.className = "wg-tile"; tile.id = `wg-${r}-${c}`;
+      tile.textContent = wgGuesses[r][c].toUpperCase();
+      if (r < wgCurrentRow) wgColorTile(tile, r, c);
+      else if (r === wgCurrentRow && c === wgCurrentCol && !wgDone) tile.classList.add("active-cursor");
+      row.appendChild(tile);
+    }
+    grid.appendChild(row);
+  }
+}
+function wgColorTile(tile, r, c) {
+  const letter = wgGuesses[r][c];
+  const result = wgEvaluate(wgGuesses[r].join(""))[c];
+  if (result === "correct") tile.classList.add("correct");
+  else if (result === "present") tile.classList.add("present");
+  else tile.classList.add("absent");
+}
+function wgEvaluate(guess) {
+  const result = Array(5).fill("absent");
+  const wordArr = wgWord.split(""), remaining = [...wordArr];
+  // First pass: correct
+  for (let i = 0; i < 5; i++) {
+    if (guess[i] === wordArr[i]) { result[i] = "correct"; remaining[remaining.indexOf(guess[i])] = null; }
+  }
+  // Second pass: present
+  for (let i = 0; i < 5; i++) {
+    if (result[i] === "correct") continue;
+    const idx = remaining.indexOf(guess[i]);
+    if (idx !== -1) { result[i] = "present"; remaining[idx] = null; }
+  }
+  return result;
+}
+
+const WG_KB = [["q","w","e","r","t","y","u","i","o","p"],["a","s","d","f","g","h","j","k","l"],["Enter","z","x","c","v","b","n","m","⌫"]];
+function renderWGKeyboard() {
+  const kb = document.getElementById("wg-keyboard"); kb.innerHTML = "";
+  WG_KB.forEach(row => {
+    const rowEl = document.createElement("div"); rowEl.className = "wg-kb-row";
+    row.forEach(key => {
+      const btn = document.createElement("button");
+      btn.className = "wg-key" + (key.length > 1 ? " wide" : "");
+      btn.textContent = key; btn.dataset.key = key;
+      btn.onclick = () => wgInput(key);
+      rowEl.appendChild(btn);
+    });
+    kb.appendChild(rowEl);
+  });
+}
+function wgUpdateKey(letter, state) {
+  const btn = document.querySelector(`#wg-keyboard [data-key="${letter}"]`);
+  if (!btn) return;
+  const priority = { correct: 3, present: 2, absent: 1 };
+  const current = ["correct","present","absent"].find(c => btn.classList.contains(c));
+  if (!current || priority[state] > priority[current]) {
+    btn.classList.remove("correct","present","absent"); btn.classList.add(state);
+  }
+}
+function wgInput(key) {
+  if (wgDone) return;
+  if (key === "⌫" || key === "Backspace") {
+    if (wgCurrentCol > 0) { wgCurrentCol--; wgGuesses[wgCurrentRow][wgCurrentCol] = ""; renderWGGrid(); }
+    return;
+  }
+  if (key === "Enter") {
+    if (wgCurrentCol < 5) { wgShakeRow(wgCurrentRow); document.getElementById("wg-hint").textContent = "Not enough letters"; return; }
+    const guess = wgGuesses[wgCurrentRow].join("");
+    const results = wgEvaluate(guess);
+    renderWGGrid();
+    // Animate tiles
+    const rowEl = document.getElementById("wg-row-"+wgCurrentRow);
+    for (let c = 0; c < 5; c++) {
+      const tile = document.getElementById(`wg-${wgCurrentRow}-${c}`);
+      setTimeout(() => {
+        const r = results[c];
+        tile.classList.add(r);
+        wgUpdateKey(wgGuesses[wgCurrentRow][c], r);
+      }, c * 80);
+    }
+    setTimeout(() => {
+      if (guess === wgWord) {
+        const msgs = ["boom 💥 got it","yes! you got it 🎉","nice one 🔥","wow okay 👀","solved!"];
+        document.getElementById("wg-hint").textContent = msgs[Math.floor(Math.random()*msgs.length)];
+        wgDone = true;
+      } else {
+        wgCurrentRow++;
+        wgCurrentCol = 0;
+        if (wgCurrentRow >= WG_ROWS) {
+          document.getElementById("wg-hint").textContent = `it was "${wgWord}"`;
+          wgDone = true;
+        } else {
+          document.getElementById("wg-hint").textContent = "";
+          renderWGGrid();
+        }
+      }
+    }, 5 * 80 + 100);
+    return;
+  }
+  if (/^[a-zA-Z]$/.test(key) && wgCurrentCol < 5) {
+    wgGuesses[wgCurrentRow][wgCurrentCol] = key.toLowerCase();
+    const tile = document.getElementById(`wg-${wgCurrentRow}-${wgCurrentCol}`);
+    if (tile) { tile.textContent = key.toUpperCase(); tile.classList.add("pop"); setTimeout(()=>tile.classList.remove("pop"),150); }
+    wgCurrentCol++;
+    renderWGGrid();
+  }
+}
+function wgShakeRow(r) {
+  const rowEl = document.getElementById("wg-row-"+r);
+  if (!rowEl) return;
+  rowEl.classList.add("shake"); setTimeout(()=>rowEl.classList.remove("shake"),400);
+}
+// Keyboard support for Word Guess
+document.addEventListener("keydown", e => {
+  if (currentGame !== "wg" || !document.getElementById("game-modal").classList.contains("open")) return;
+  if (e.key === "Backspace") { e.preventDefault(); wgInput("Backspace"); }
+  else if (e.key === "Enter") wgInput("Enter");
+  else if (/^[a-zA-Z]$/.test(e.key)) wgInput(e.key);
+});
+initWG();
+
 let currentUsername = "";
 
 async function loadServerChats() {
@@ -1305,7 +1670,6 @@ async function initUsername() {
 
 initUsername();
 
-// ── ToS update banner ────────────────────────────────────────────────────────
 (function() {
   const COOKIE = "glitch_tos_v2";
   function hasCookie(name) {
@@ -1332,7 +1696,6 @@ initUsername();
   };
 })();
 
-// ── Status page fetch ────────────────────────────────────────────────────────
 (async function fetchStatus() {
   try {
     const res = await fetch("https://stats.uptimerobot.com/api/getMonitorList/tKeBHHLwk5");
