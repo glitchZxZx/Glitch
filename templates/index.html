@@ -30,6 +30,7 @@ body {
   height: 100dvh; display: flex; overflow: hidden;
 }
 
+/* SIDEBAR */
 .sidebar {
   width: 240px; background: var(--surface);
   border-right: 1px solid var(--border);
@@ -81,6 +82,7 @@ body {
 .history-item:hover .delete-chat-btn { display: flex; }
 .delete-chat-btn:hover { color: var(--danger); background: rgba(226,75,74,0.12); }
 
+/* MAIN */
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .topbar {
   padding: 14px 20px; border-bottom: 1px solid var(--border);
@@ -121,6 +123,7 @@ body {
 }
 .user-info-name { font-size: 13px; font-weight: 500; color: var(--text); }
 
+/* CHAT */
 .chat-area { flex: 1; overflow-y: auto; padding: 28px 0 8px; scroll-behavior: smooth; }
 .chat-area::-webkit-scrollbar { width: 5px; }
 .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -190,6 +193,7 @@ body {
   border-bottom-left-radius: 5px; color: var(--text);
 }
 
+/* Markdown in glitch bubbles */
 .msg-bubble p { margin: 0 0 8px; }
 .msg-bubble p:last-child { margin-bottom: 0; }
 .msg-bubble strong { font-weight: 700; color: var(--text); }
@@ -209,12 +213,14 @@ body {
 }
 .msg-bubble hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
+/* Inline code */
 .msg-bubble code:not(.block-code) {
   background: var(--code-bg); color: #c084fc;
   padding: 2px 5px; border-radius: 4px; font-family: "Fira Code", "Cascadia Code", monospace;
   font-size: 0.88em; border: 1px solid var(--border);
 }
 
+/* Code block */
 .code-block {
   background: var(--code-bg); border: 1px solid var(--border);
   border-radius: 10px; margin: 8px 0; overflow: hidden; font-size: 13px;
@@ -240,6 +246,7 @@ body {
 .code-block pre::-webkit-scrollbar { height: 4px; }
 .code-block pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
+/* Generated image in chat */
 .msg-image { max-width: 260px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 6px; display: block; }
 .gen-image { max-width: 320px; border-radius: 12px; border: 1px solid var(--border); margin-top: 8px; display: block; cursor: pointer; transition: opacity 0.15s; }
 .gen-image:hover { opacity: 0.92; }
@@ -251,6 +258,7 @@ body {
 }
 @keyframes blink { 50% { opacity: 0; } }
 
+/* INPUT */
 .input-area { padding: 12px 20px 18px; background: var(--bg); flex-shrink: 0; }
 .input-box {
   max-width: 680px; margin: 0 auto; background: var(--surface);
@@ -282,6 +290,7 @@ body {
 .icon-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); }
 .icon-btn svg { width: 15px; height: 15px; }
 
+/* Think harder toggle */
 .think-btn { position: relative; }
 .think-btn.active {
   border-color: var(--think-color); color: var(--think-color);
@@ -314,6 +323,7 @@ body {
   border-radius: 20px; padding: 3px 10px; margin-bottom: 8px;
 }
 
+/* Paste overlay hint */
 .paste-hint {
   position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
   background: var(--surface); border: 1px solid var(--purple-soft);
@@ -322,6 +332,7 @@ body {
 }
 .paste-hint.show { opacity: 1; }
 
+/* GAME MODAL */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.65);
   backdrop-filter: blur(6px);
@@ -369,6 +380,7 @@ body {
 .game-tab:hover { color: var(--text); }
 .game-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
 
+/* RPS */
 .rps-scoreboard {
   display: grid; grid-template-columns: 1fr auto 1fr;
   align-items: center; gap: 8px; margin-bottom: 14px;
@@ -405,6 +417,7 @@ body {
 .rps-btn:hover { transform: translateY(-3px); border-color: var(--purple-soft); background: var(--user-bg); }
 .rps-btn:active { transform: scale(0.94); }
 
+/* Connect 4 */
 .c4-status {
   text-align: center; font-size: 13px; font-weight: 500; color: var(--text);
   margin-bottom: 10px; min-height: 20px;
@@ -433,57 +446,9 @@ body {
 }
 .game-new-btn:hover { border-color: var(--purple-soft); color: var(--text); }
 
-.reaction-bar {
-  display: flex; gap: 4px; margin-top: 5px;
-  opacity: 0; transition: opacity 0.15s; height: 24px;
-}
-.msg-row.glitch:hover .reaction-bar,
-.reaction-bar:has(.reaction-btn.active-up),
-.reaction-bar:has(.reaction-btn.active-down) { opacity: 1; }
-.reaction-btn {
-  background: none; border: 1px solid var(--border);
-  border-radius: 20px; padding: 2px 8px; font-size: 12px;
-  color: var(--muted); cursor: pointer; transition: all 0.12s;
-  display: flex; align-items: center; gap: 3px; line-height: 1;
-}
-.reaction-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); background: rgba(124,110,240,0.06); }
-.reaction-btn.active-up { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.08); }
-.reaction-btn.active-down { border-color: var(--danger); color: var(--danger); background: rgba(226,75,74,0.08); }
-.mic-btn.recording {
-  border-color: var(--danger) !important; color: var(--danger) !important;
-  background: rgba(226,75,74,0.1) !important;
-  animation: pulse-mic 1.2s ease-in-out infinite;
-}
-@keyframes pulse-mic {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(226,75,74,0.4); }
-  50% { box-shadow: 0 0 0 5px rgba(226,75,74,0); }
-}
-.pin-chat-btn {
-  width: 18px; height: 18px; background: none; border: none;
-  color: var(--muted); cursor: pointer; border-radius: 4px;
-  display: none; align-items: center; justify-content: center;
-  flex-shrink: 0; font-size: 11px; line-height: 1;
-  transition: color 0.12s, background 0.12s;
-}
-.history-item:hover .pin-chat-btn { display: flex; }
-.pin-chat-btn.pinned { display: flex; color: var(--purple-soft); }
-.pin-chat-btn:hover { color: var(--purple-soft); background: rgba(124,110,240,0.1); }
-.history-item.pinned-item { border-left: 2px solid rgba(124,110,240,0.3); padding-left: 8px; }
-.pin-divider {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--muted); padding: 8px 14px 2px;
-}
-.export-btn {
-  width: 30px; height: 30px; background: none; border: 1px solid var(--border);
-  border-radius: 8px; color: var(--muted); cursor: pointer;
-  display: none; align-items: center; justify-content: center;
-  transition: border-color 0.12s, color 0.12s; flex-shrink: 0;
-}
-.export-btn.visible { display: flex; }
-.export-btn:hover { border-color: var(--purple-soft); color: var(--purple-soft); }
-.export-btn svg { width: 14px; height: 14px; }
 @media (max-width: 600px) { .sidebar { display: none; } }
 
+/* ToS update banner */
 .tos-banner {
   position: fixed; bottom: 20px; right: 20px; z-index: 200;
   background: var(--surface); border: 1px solid var(--border);
@@ -515,6 +480,7 @@ body {
 }
 .tos-banner-links a:hover { border-color: var(--purple); background: rgba(124,110,240,.08); }
 
+/* Sidebar footer + status */
 .sidebar-footer { padding: 10px 12px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
 .status-link {
   display: flex; align-items: center; gap: 7px; text-decoration: none;
@@ -557,6 +523,7 @@ body {
   </div>
 </div>
 
+
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
@@ -564,16 +531,9 @@ body {
       <span class="topbar-name">Glitch</span>
       <span class="topbar-model" id="topbar-model">llama-4-scout · vision</span>
     </div>
-    <div class="topbar-right" style="display:flex;align-items:center;gap:8px;">
-      <button class="export-btn" id="export-btn" onclick="exportChat()" title="Export chat as Markdown">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-      </button>
-      <div id="topbar-auth">
-        <a href="/login" class="auth-btn-ghost">Log in</a>
-        <a href="/signup" class="auth-btn-solid">Sign up</a>
-      </div>
+    <div class="topbar-right" id="topbar-auth">
+      <a href="/login" class="auth-btn-ghost">Log in</a>
+      <a href="/signup" class="auth-btn-solid">Sign up</a>
     </div>
   </div>
 
@@ -612,7 +572,6 @@ body {
         
         <button class="icon-btn think-btn" id="think-btn" title="Think harder" onclick="toggleThink()">
           <div class="think-tooltip" id="think-tooltip">Think harder</div>
-          <div class="think-tooltip" id="think-tooltip">Think harder</div>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
             <circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/>
@@ -620,13 +579,6 @@ body {
         </button>
 
         
-
-        <button class="icon-btn mic-btn" id="mic-btn" title="Voice input" onclick="toggleVoice()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="2" width="6" height="11" rx="3"/>
-            <path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/>
-          </svg>
-        </button>
         <button class="icon-btn" title="Play a game with Glitch" onclick="openGameModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="6" width="20" height="12" rx="4"/>
@@ -664,6 +616,7 @@ body {
 
 <div class="paste-hint" id="paste-hint">📋 Image pasted!</div>
 
+<!-- ToS update banner — shown once via cookie -->
 <div class="tos-banner" id="tos-banner" style="display:none;">
   <div class="tos-banner-top">
     <span class="tos-banner-title">📋 We updated our policies</span>
@@ -742,7 +695,7 @@ let pendingImages = [];
 let thinking = false;
 let thinkMode = false;
 
- init think mode UI
+// init think mode UI
 document.getElementById("think-tooltip").textContent = "Think harder";
 
 const chatInner   = document.getElementById("chat-inner");
@@ -756,7 +709,7 @@ const thinkBtn     = document.getElementById("think-btn");
 
 function setAvatars() {
   document.querySelectorAll("#sidebar-avatar, #empty-avatar, #username-modal-avatar, .msg-meta-avatar.glitch-av").forEach(el => {
-    if (el.querySelector("img")) return;  already set
+    if (el.querySelector("img")) return; // already set
     const img = new Image();
     img.src = AVATAR_URL;
     img.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:50%;";
@@ -826,7 +779,7 @@ function renderMarkdown(text) {
         code += lines[i] + "\n";
         i++;
       }
-      i++;  skip closing ```
+      i++; // skip closing ```
       const escaped = escHtml(code.trimEnd());
       const id = "cb" + Math.random().toString(36).slice(2);
       html += `<div class="code-block">
@@ -955,17 +908,17 @@ function addMessage(role, text, imageDataUrl) {
     row.appendChild(bubble);
     chatInner.appendChild(row);
     scrollBottom();
-    return null;  user messages don't need live update handle
+    return null; // user messages don't need live update handle
   } else {
     row.appendChild(meta);
     row.appendChild(bubble);
     chatInner.appendChild(row);
-    addReactionBar(row);
     scrollBottom();
     return bubble;
   }
 }
 
+/* Update glitch bubble content with markdown during streaming */
 function updateBubble(bubble, text) {
   bubble.innerHTML = renderMarkdown(text);
 }
@@ -1051,7 +1004,7 @@ async function sendMessage() {
       if (!searchDetected) {
         if (rawBuffer.startsWith("§SEARCH:")) {
           const end = rawBuffer.indexOf("§\n");
-          if (end === -1) continue;  wait for full signal
+          if (end === -1) continue; // wait for full signal
           const query = rawBuffer.slice(8, end);
           rawBuffer = rawBuffer.slice(end + 2);
           searchDetected = true;
@@ -1079,24 +1032,6 @@ async function sendMessage() {
   cursor.remove();
   history.push({ role: "assistant", content: reply });
   sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
-
-  if (history.length === 2) {
-    (async () => {
-      try {
-        const tr = await fetch("/api/title", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userMessage: text, aiMessage: reply })
-        });
-        const td = await tr.json();
-        if (td.title && currentIndex >= 0 && sessions[currentIndex]) {
-          sessions[currentIndex].title = td.title;
-          saveAndRenderSidebar();
-        }
-      } catch { }
-    })();
-  }
-
   saveAndRenderSidebar();
   thinking = false; sendBtn.disabled = false; userInput.focus();
   updateTopbarModel();
@@ -1141,7 +1076,7 @@ async function saveAndRenderSidebar() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat: sessions[currentIndex] })
     });
-  } catch {  }
+  } catch { /* silently fail */ }
 }
 
 async function deleteChat(i, e) {
@@ -1158,56 +1093,26 @@ async function deleteChat(i, e) {
   } else if (currentIndex > i) { currentIndex--; }
   renderSidebar();
   if (isLoggedIn && chat?.id) {
-    try { await fetch(`/api/chats/${chat.id}`, { method: "DELETE" }); } catch {  }
+    try { await fetch(`/api/chats/${chat.id}`, { method: "DELETE" }); } catch { /* silently fail */ }
   }
-}
-
-function togglePin(i, e) {
-  e.stopPropagation();
-  sessions[i].pinned = !sessions[i].pinned;
-  const active = sessions[currentIndex];
-  sessions = [...sessions.filter(s => s.pinned), ...sessions.filter(s => !s.pinned)];
-  currentIndex = sessions.indexOf(active);
-  saveAndRenderSidebar();
 }
 
 function renderSidebar() {
   historyList.innerHTML = "";
-  const pinned   = sessions.filter(s => s.pinned);
-  const unpinned = sessions.filter(s => !s.pinned);
-  function makeItem(s, i) {
+  sessions.forEach((s, i) => {
     const item = document.createElement("div");
-    item.className = "history-item" + (i === currentIndex ? " active" : "") + (s.pinned ? " pinned-item" : "");
+    item.className = "history-item" + (i === currentIndex ? " active" : "");
     const titleSpan = document.createElement("span");
     titleSpan.className = "history-item-title";
     titleSpan.textContent = s.title;
-    const pinBtn = document.createElement("button");
-    pinBtn.className = "pin-chat-btn" + (s.pinned ? " pinned" : "");
-    pinBtn.title = s.pinned ? "Unpin" : "Pin";
-    pinBtn.textContent = "📌";
-    pinBtn.onclick = (e) => togglePin(i, e);
     const delBtn = document.createElement("button");
     delBtn.className = "delete-chat-btn";
     delBtn.innerHTML = "×"; delBtn.title = "Delete chat";
     delBtn.onclick = (e) => deleteChat(i, e);
-    item.appendChild(titleSpan); item.appendChild(pinBtn); item.appendChild(delBtn);
+    item.appendChild(titleSpan); item.appendChild(delBtn);
     item.onclick = () => loadSession(i);
     historyList.appendChild(item);
-  }
-  if (pinned.length) {
-    const l1 = document.createElement("div");
-    l1.className = "pin-divider"; l1.textContent = "Pinned";
-    historyList.appendChild(l1);
-    pinned.forEach(s => makeItem(s, sessions.indexOf(s)));
-    if (unpinned.length) {
-      const l2 = document.createElement("div");
-      l2.className = "pin-divider"; l2.textContent = "Recent";
-      historyList.appendChild(l2);
-    }
-  }
-  unpinned.forEach(s => makeItem(s, sessions.indexOf(s)));
-  const exportBtn = document.getElementById("export-btn");
-  if (exportBtn) exportBtn.classList.toggle("visible", currentIndex >= 0 && !!sessions[currentIndex]?.history?.length);
+  });
 }
 
 function loadSession(i) {
@@ -1252,6 +1157,7 @@ function switchGame(game) {
   document.getElementById("game-modal-sub").textContent = game === "rps" ? "Rock Paper Scissors" : "Connect 4 — you go first";
 }
 
+/* RPS */
 let rpsYou = 0, rpsGlitch = 0, rpsTotal = 0;
 const rpsChoices = ["rock", "scissors", "paper"];
 const rpsEmoji = { rock: "✊", paper: "✋", scissors: "✌️" };
@@ -1259,7 +1165,26 @@ const rpsWinQuips  = ["wait WHAT 😭 okay that's fair","no way... lucky shot �
 const rpsLoseQuips = ["called it 😌 too easy","heh I'm just built different","knew you'd pick that 👀","not even trying at this point lol","one step ahead always 😌","honestly? saw that coming a mile away","you walked right into that one"];
 const rpsTieQuips  = ["okay we're literally the same person","a tie really come on","we need to stop thinking alike lol","are you copying me??","this is getting weird"];
 
-const EMPTY_STATE_HTML = `<div class="empty-avatar" id="empty-avatar">G</div><h2>Hey, I'm Glitch.</h2><p>What's on your mind?</p><div class="feature-chips"><button class="feature-chip" onclick="toggleThink(); document.getElementById('user-input').focus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/></svg>Think harder</button><button class="feature-chip" onclick="openGameModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4M8 10v4"/><circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="13" r="1" fill="currentColor" stroke="none"/></svg>Play a game</button><label class="feature-chip" style="cursor:pointer;"><input type="file" accept="image
+const EMPTY_STATE_HTML = `<div class="empty-avatar" id="empty-avatar">G</div><h2>Hey, I'm Glitch.</h2><p>What's on your mind?</p><div class="feature-chips"><button class="feature-chip" onclick="toggleThink(); document.getElementById('user-input').focus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/></svg>Think harder</button><button class="feature-chip" onclick="openGameModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4M8 10v4"/><circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="13" r="1" fill="currentColor" stroke="none"/></svg>Play a game</button><label class="feature-chip" style="cursor:pointer;"><input type="file" accept="image/*" style="display:none;" onchange="handleImage(event)"/><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Attach image</label></div>`;
+
+function playRPS(userChoice) {
+  const glitchChoice = rpsChoices[Math.floor(Math.random() * 3)];
+  rpsTotal++;
+  let outcome;
+  if (userChoice === glitchChoice) { outcome = "tie"; }
+  else if ((userChoice==="rock"&&glitchChoice==="scissors")||(userChoice==="paper"&&glitchChoice==="rock")||(userChoice==="scissors"&&glitchChoice==="paper")) { outcome = "win"; rpsYou++; }
+  else { outcome = "lose"; rpsGlitch++; }
+  document.getElementById("rps-you").textContent = rpsYou;
+  document.getElementById("rps-glitch").textContent = rpsGlitch;
+  let quip = outcome==="win" ? pick(rpsWinQuips) : outcome==="lose" ? pick(rpsLoseQuips) : pick(rpsTieQuips);
+  if (rpsTotal >= 4 && rpsYou >= 3) quip = `you've beaten me ${rpsYou} times now... suspicious 👀`;
+  else if (rpsTotal >= 4 && rpsGlitch >= 3) quip = `${rpsGlitch} wins for me not that I'm counting`;
+  const label = outcome==="win" ? "you win 🎉" : outcome==="lose" ? "glitch wins 😌" : "it's a tie 🤝";
+  document.getElementById("rps-result").innerHTML =
+    `<div class="rps-result-inner"><div class="rps-emojis">${rpsEmoji[userChoice]} ${rpsEmoji[glitchChoice]}</div><div class="rps-outcome">${label}</div><div class="rps-quip">${quip}</div></div>`;
+}
+
+/* Connect 4 */
 const ROWS=6, COLS=7;
 let c4Board, c4Turn, c4Over;
 function initC4() {
@@ -1327,7 +1252,7 @@ function resetCurrentGame(){
   } else { initC4(); }
 }
 
- ── Username + auth state ────────────────────────────────────────────────────
+// ── Username + auth state ────────────────────────────────────────────────────
 let currentUsername = "";
 
 async function loadServerChats() {
@@ -1342,80 +1267,6 @@ async function loadServerChats() {
   renderSidebar();
 }
 
-
-
-let recognition = null;
-let isRecording = false;
-
-function toggleVoice() {
-  const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SRClass) { alert("Voice input isn't supported in this browser. Try Chrome."); return; }
-  const micBtn = document.getElementById("mic-btn");
-  if (isRecording) { recognition?.stop(); return; }
-  recognition = new SRClass();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.maxAlternatives = 1;
-  recognition.lang = "en-US";
-  let finalTranscript = "";
-  recognition.onstart = () => { isRecording = true; micBtn.classList.add("recording"); finalTranscript = ""; };
-  recognition.onresult = (e) => {
-    let interim = "";
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) finalTranscript += t;
-      else interim += t;
-    }
-    userInput.value = finalTranscript + interim;
-    autoResize(userInput);
-  };
-  recognition.onend = () => {
-    isRecording = false; micBtn.classList.remove("recording");
-    if (finalTranscript) { userInput.value = finalTranscript; autoResize(userInput); userInput.focus(); }
-  };
-  recognition.onerror = (e) => {
-    isRecording = false; micBtn.classList.remove("recording");
-    if (e.error !== "no-speech" && e.error !== "aborted") alert("Mic error: " + e.error);
-  };
-  recognition.start();
-}
-
-function exportChat() {
-  if (currentIndex < 0 || !sessions[currentIndex]) return;
-  const chat = sessions[currentIndex];
-  let md = "# " + chat.title + "\n\n";
-  chat.history.forEach(m => {
-    if (typeof m.content !== "string") return;
-    const role = m.role === "user" ? "**You**" : "**Glitch**";
-    md += role + "\n\n" + m.content + "\n\n---\n\n";
-  });
-  const blob = new Blob([md], { type: "text/markdown" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = (chat.title.replace(/[^\w\s\-]/g, "").trim() || "glitch-chat") + ".md";
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function addReactionBar(row) {
-  const bar = document.createElement("div");
-  bar.className = "reaction-bar";
-  ["👍", "👎"].forEach((emoji, idx) => {
-    const btn = document.createElement("button");
-    btn.className = "reaction-btn";
-    btn.textContent = emoji;
-    btn.onclick = () => {
-      const isUp = idx === 0;
-      const activeClass = isUp ? "active-up" : "active-down";
-      const wasActive = btn.classList.contains(activeClass);
-      bar.querySelectorAll(".reaction-btn").forEach(b => b.classList.remove("active-up", "active-down"));
-      if (!wasActive) btn.classList.add(activeClass);
-    };
-    bar.appendChild(btn);
-  });
-  row.appendChild(bar);
-}
-
 async function initUsername() {
   try {
     const res = await fetch("/api/username");
@@ -1424,7 +1275,7 @@ async function initUsername() {
       currentUsername = data.username;
       isLoggedIn = true;
 
-       Show username in sidebar header
+      // Show username in sidebar header
       const existing = document.getElementById("sidebar-username");
       if (!existing) {
         const span = document.createElement("span");
@@ -1434,7 +1285,7 @@ async function initUsername() {
         document.querySelector(".sidebar-header").appendChild(span);
       }
 
-       Replace Log in / Sign up buttons with user avatar + name
+      // Replace Log in / Sign up buttons with user avatar + name
       const authEl = document.getElementById("topbar-auth");
       if (authEl) {
         const letter = currentUsername.charAt(0).toUpperCase();
@@ -1446,15 +1297,15 @@ async function initUsername() {
           </div>`;
       }
     }
-  } catch {  }
+  } catch { /* not logged in, fine */ }
 
-   Always load chats from server (empty if not logged in)
+  // Always load chats from server (empty if not logged in)
   await loadServerChats();
 }
 
 initUsername();
 
- ── ToS update banner ────────────────────────────────────────────────────────
+// ── ToS update banner ────────────────────────────────────────────────────────
 (function() {
   const COOKIE = "glitch_tos_v2";
   function hasCookie(name) {
@@ -1481,7 +1332,7 @@ initUsername();
   };
 })();
 
- ── Status page fetch ────────────────────────────────────────────────────────
+// ── Status page fetch ────────────────────────────────────────────────────────
 (async function fetchStatus() {
   try {
     const res = await fetch("https://stats.uptimerobot.com/api/getMonitorList/tKeBHHLwk5");
@@ -1498,8 +1349,8 @@ initUsername();
       dot.className = "status-indicator degraded";
       label.textContent = "Partial outage";
     }
-     else: default green "All systems operational"
-  } catch {  }
+    // else: default green "All systems operational"
+  } catch { /* silently fail */ }
 })();
 </script>
 </body>
