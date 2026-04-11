@@ -396,7 +396,8 @@ def chat():
                 messages=messages,
                 stream=True,
                 max_tokens=max_tokens,
-                extra_body={"repetition_penalty": 1.15}
+                frequency_penalty=0.5,
+                presence_penalty=0.3
             )
             for chunk in stream:
                 content = chunk.choices[0].delta.content
