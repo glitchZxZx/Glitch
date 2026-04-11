@@ -8,9 +8,7 @@ from urllib.parse import quote
 from datetime import date
 import time
 from collections import deque
-import smtplib
 import random
-from email.mime.text import MIMEText
 
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -223,18 +221,70 @@ GMAIL_ADDRESS  = os.environ.get("GMAIL_ADDRESS", "glitch.l.l.m.ai@gmail.com")
 GMAIL_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 
 def send_otp_email(to_email: str, code: str):
-    msg = MIMEText(
-        f"Your Glitch verification code is:\n\n"
-        f"  {code}\n\n"
-        f"This code expires in 10 minutes.\n\n"
-        f"If you didn't request this, you can ignore this email."
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;background:#0e0e11;font-family:-apple-system,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0e0e11;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
+
+        <!-- Header -->
+        <tr><td style="padding-bottom:28px;text-align:center;">
+          <span style="font-size:28px;font-weight:800;color:#e8e8f0;letter-spacing:-0.03em;">Glitch</span>
+        </td></tr>
+
+        <!-- Card -->
+        <tr><td style="background:#16161a;border:1px solid #2a2a35;border-radius:16px;padding:36px 32px;">
+
+          <p style="margin:0 0 6px;font-size:20px;font-weight:700;color:#e8e8f0;letter-spacing:-0.02em;">
+            Your verification code
+          </p>
+          <p style="margin:0 0 28px;font-size:14px;color:#6b6b80;line-height:1.6;">
+            Enter this code on the sign-up page. It expires in 10 minutes.
+          </p>
+
+          <!-- Code box -->
+          <div style="background:#0e0e11;border:1px solid #2a2a35;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
+            <span style="font-size:40px;font-weight:800;color:#7c6ef0;letter-spacing:0.18em;font-variant-numeric:tabular-nums;">
+              {code}
+            </span>
+          </div>
+
+          <p style="margin:0;font-size:13px;color:#6b6b80;line-height:1.65;">
+            If you didn't request this, you can safely ignore this email. Someone may have typed your address by mistake.
+          </p>
+
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding-top:24px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#3a3a50;">
+            Glitch &middot; glitch-ozuf.onrender.com
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    resp = req_lib.post(
+        "https://api.resend.com/emails",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json={
+            "from": "Glitch <onboarding@resend.dev>",
+            "to": [to_email],
+            "subject": f"{code} is your Glitch code",
+            "html": html,
+            "text": f"Your Glitch verification code is: {code}\n\nExpires in 10 minutes."
+        },
+        timeout=8
     )
-    msg["Subject"] = f"{code} is your Glitch code"
-    msg["From"]    = f"Glitch <{GMAIL_ADDRESS}>"
-    msg["To"]      = to_email
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
-        s.login(GMAIL_ADDRESS, GMAIL_PASSWORD)
-        s.send_message(msg)
+    if resp.status_code >= 400:
+        raise Exception(resp.text)
 
 @app.route("/api/send-code", methods=["POST"])
 def api_send_code():
@@ -325,36 +375,6 @@ def terms():
 @app.route("/imprint")
 def imprint():
     return render_template("imprint.html")
-
-
-# ── AI title generation ───────────────────────────────────────────────────────
-@app.route("/api/title", methods=["POST"])
-def generate_title():
-    data      = request.get_json()
-    user_msg  = (data.get("userMsg") or "")[:200]
-    ai_msg    = (data.get("aiMsg")   or "")[:200]
-    if not user_msg:
-        return jsonify({"title": "New chat"})
-    try:
-        resp = client.chat.completions.create(
-            model=SCOUT_MODEL,
-            messages=[
-                {"role": "system", "content": (
-                    "Generate a very short chat title (3–5 words max). "
-                    "No quotes, no punctuation at end, no emoji. "
-                    "Output ONLY the title — nothing else."
-                )},
-                {"role": "user", "content": f"User: {user_msg}\nAssistant: {ai_msg}"}
-            ],
-            max_tokens=16
-        )
-        title = resp.choices[0].message.content.strip().strip("\"'").strip()
-        if len(title) > 52:
-            title = title[:52]
-        return jsonify({"title": title or user_msg[:32]})
-    except Exception:
-        short = user_msg[:32] + ("…" if len(user_msg) > 32 else "")
-        return jsonify({"title": short})
 
 
 # ── Chat route ────────────────────────────────────────────────────────────────
