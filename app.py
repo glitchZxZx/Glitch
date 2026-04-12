@@ -149,7 +149,7 @@ def validate_history(history):
     return clean[-20:]  # max 20 messages
 
 # ── Model & personality ───────────────────────────────────────────────────────
-SCOUT_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+SCOUT_MODEL = "openai/gpt-oss-120b"
 
 def load_personality():
     try:
