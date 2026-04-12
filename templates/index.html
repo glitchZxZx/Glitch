@@ -1190,12 +1190,13 @@ async function saveAndRenderSidebar() {
   renderSidebar();
   if (!isLoggedIn || currentIndex < 0 || !sessions[currentIndex]) return;
   try {
-    await fetch("/api/chats", {
+    const res = await fetch("/api/chats", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ chat: sessions[currentIndex] })
     });
-  } catch { /* silently fail */ }
+    if (!res.ok) console.error("[glitch] save failed:", res.status, await res.text());
+  } catch(e) { console.error("[glitch] save error:", e); }
 }
 
 async function deleteChat(i, e) {
@@ -1636,7 +1637,7 @@ async function loadServerChats() {
   try {
     const res = await fetch("/api/chats", { headers: authHeaders() });
     const data = await res.json();
-    isLoggedIn = data.loggedIn || false;
+    if (data.loggedIn) isLoggedIn = true; // never flip back to false once confirmed logged in
     sessions = data.chats || [];
   } catch {
     sessions = [];
