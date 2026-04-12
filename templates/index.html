@@ -1188,7 +1188,7 @@ async function saveAndRenderSidebar() {
   try {
     await fetch("/api/chats", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ chat: sessions[currentIndex] })
     });
   } catch { /* silently fail */ }
@@ -1208,7 +1208,7 @@ async function deleteChat(i, e) {
   } else if (currentIndex > i) { currentIndex--; }
   renderSidebar();
   if (isLoggedIn && chat?.id) {
-    try { await fetch(`/api/chats/${chat.id}`, { method: "DELETE" }); } catch { /* silently fail */ }
+    try { await fetch(`/api/chats/${chat.id}`, { method: "DELETE", headers: authHeaders() }); } catch { /* silently fail */ }
   }
 }
 
@@ -1260,7 +1260,7 @@ function togglePin(i) {
   if (isLoggedIn && sessions[i]?.id) {
     fetch("/api/chats", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ chat: sessions[i] })
     }).catch(()=>{});
   }
@@ -1609,7 +1609,7 @@ function wgShakeRow(r) {
   if (!rowEl) return;
   rowEl.classList.add("shake"); setTimeout(()=>rowEl.classList.remove("shake"),400);
 }
-// Keyboard support for Word Guess
+
 document.addEventListener("keydown", e => {
   if (currentGame !== "wg" || !document.getElementById("game-modal").classList.contains("open")) return;
   if (e.key === "Backspace") { e.preventDefault(); wgInput("Backspace"); }
@@ -1620,9 +1620,17 @@ initWG();
 
 let currentUsername = "";
 
+function authHeaders() {
+  const token = localStorage.getItem('glitch_session') || '';
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'X-Session-Token': token } : {})
+  };
+}
+
 async function loadServerChats() {
   try {
-    const res = await fetch("/api/chats");
+    const res = await fetch("/api/chats", { headers: authHeaders() });
     const data = await res.json();
     isLoggedIn = data.loggedIn || false;
     sessions = data.chats || [];
@@ -1634,7 +1642,7 @@ async function loadServerChats() {
 
 async function initUsername() {
   try {
-    const res = await fetch("/api/username");
+    const res = await fetch("/api/username", { headers: authHeaders() });
     const data = await res.json();
     if (data.username) {
       currentUsername = data.username;
@@ -1650,7 +1658,6 @@ async function initUsername() {
         document.querySelector(".sidebar-header").appendChild(span);
       }
 
-      // Replace Log in / Sign up buttons with user avatar + name
       const authEl = document.getElementById("topbar-auth");
       if (authEl) {
         const letter = currentUsername.charAt(0).toUpperCase();
@@ -1662,9 +1669,9 @@ async function initUsername() {
           </div>`;
       }
     }
-  } catch { /* not logged in, fine */ }
+  } catch { /* not logged in*/ }
 
-  // Always load chats from server (empty if not logged in)
+  // Always load chats from server
   await loadServerChats();
 }
 

@@ -3,6 +3,7 @@ from groq import Groq
 import os
 import re
 import json
+import secrets
 import requests as req_lib
 from urllib.parse import quote
 from datetime import date
@@ -13,85 +14,102 @@ import random
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-# Simple IP → username store (in-memory, survives restarts via JSON file)
-USERNAME_FILE = "usernames.json"
+# ── Supabase client ───────────────────────────────────────────────────────────
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")        # e.g. https://xyz.supabase.co
+SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY", "")   # anon/public key
 
-def _load_usernames():
+def _sb_headers(prefer=None):
+    h = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+    }
+    if prefer:
+        h["Prefer"] = prefer
+    return h
+
+def sb_get(table, params=None):
     try:
-        with open(USERNAME_FILE, "r") as f:
-            return json.load(f)
+        r = req_lib.get(
+            f"{SUPABASE_URL}/rest/v1/{table}",
+            headers=_sb_headers(),
+            params=params,
+            timeout=5
+        )
+        return r.json() if r.ok else []
     except Exception:
-        return {}
+        return []
 
-def _save_usernames(d):
+def sb_upsert(table, data):
     try:
-        with open(USERNAME_FILE, "w") as f:
-            json.dump(d, f)
+        r = req_lib.post(
+            f"{SUPABASE_URL}/rest/v1/{table}",
+            headers=_sb_headers("resolution=merge-duplicates,return=representation"),
+            json=data,
+            timeout=5
+        )
+        return r.ok
     except Exception:
-        pass
+        return False
 
-_usernames: dict = _load_usernames()
-
-# ── Server-side chat storage ─────────────────────────────────────────────────
-CHATS_FILE = "chats.json"
-
-def _load_chats():
+def sb_insert(table, data):
     try:
-        with open(CHATS_FILE, "r") as f:
-            return json.load(f)
+        r = req_lib.post(
+            f"{SUPABASE_URL}/rest/v1/{table}",
+            headers=_sb_headers("return=representation"),
+            json=data,
+            timeout=5
+        )
+        return r.ok
     except Exception:
-        return {}
+        return False
 
-def _save_chats(d):
+def sb_delete(table, params):
     try:
-        with open(CHATS_FILE, "w") as f:
-            json.dump(d, f)
+        r = req_lib.delete(
+            f"{SUPABASE_URL}/rest/v1/{table}",
+            headers=_sb_headers(),
+            params=params,
+            timeout=5
+        )
+        return r.ok
     except Exception:
-        pass
+        return False
 
-_chats: dict = _load_chats()
+# ── Session auth ──────────────────────────────────────────────────────────────
+def get_session_email(req):
+    """Validate X-Session-Token header, return email or None."""
+    token = req.headers.get("X-Session-Token", "").strip()
+    if not token or len(token) > 100:
+        return None
+    rows = sb_get("sessions", {"token": f"eq.{token}", "select": "email"})
+    if rows and isinstance(rows, list) and len(rows) > 0:
+        return rows[0].get("email")
+    return None
 
-@app.route("/api/chats", methods=["GET"])
-def get_chats():
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
-    # Only return chats if user has a username (is "logged in")
-    if not _usernames.get(ip):
-        return jsonify({"chats": [], "loggedIn": False})
-    return jsonify({"chats": _chats.get(ip, []), "loggedIn": True})
+# ── OTP storage & rate limiting ───────────────────────────────────────────────
+_codes: dict = {}          # email -> (code, expires_at)
+_otp_attempts: dict = {}   # email -> [timestamps]
+OTP_MAX_ATTEMPTS = 5
+OTP_WINDOW = 600  # 10 minutes
 
-@app.route("/api/chats", methods=["POST"])
-def save_chat():
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
-    if not _usernames.get(ip):
-        return jsonify({"error": "not logged in"}), 401
-    data = request.get_json()
-    chat = data.get("chat")
-    if not chat or not chat.get("id"):
-        return jsonify({"error": "invalid"}), 400
-    user_chats = _chats.get(ip, [])
-    # Update existing or insert at front
-    for i, c in enumerate(user_chats):
-        if c["id"] == chat["id"]:
-            user_chats[i] = chat
-            break
-    else:
-        user_chats.insert(0, chat)
-    _chats[ip] = user_chats[:50]  # max 50 chats per user
-    _save_chats(_chats)
-    return jsonify({"ok": True})
+def check_otp_attempts(email: str) -> bool:
+    """Returns True if the email is temporarily blocked."""
+    now = time.time()
+    attempts = [t for t in _otp_attempts.get(email, []) if now - t < OTP_WINDOW]
+    _otp_attempts[email] = attempts
+    return len(attempts) >= OTP_MAX_ATTEMPTS
 
-@app.route("/api/chats/<chat_id>", methods=["DELETE"])
-def delete_chat_route(chat_id):
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
-    if not _usernames.get(ip):
-        return jsonify({"error": "not logged in"}), 401
-    user_chats = _chats.get(ip, [])
-    _chats[ip] = [c for c in user_chats if c["id"] != chat_id]
-    _save_chats(_chats)
-    return jsonify({"ok": True})
+def record_otp_attempt(email: str):
+    now = time.time()
+    attempts = [t for t in _otp_attempts.get(email, []) if now - t < OTP_WINDOW]
+    attempts.append(now)
+    _otp_attempts[email] = attempts
 
+def clear_otp_attempts(email: str):
+    _otp_attempts.pop(email, None)
 
-# Per-IP rate limit: max 20 requests per 60 seconds
+# ── Chat rate limiting ────────────────────────────────────────────────────────
 RATE_LIMIT = 20
 RATE_WINDOW = 60
 _rate_store: dict[str, deque] = {}
@@ -108,6 +126,29 @@ def is_rate_limited(ip: str) -> bool:
     dq.append(now)
     return False
 
+# ── History validation ────────────────────────────────────────────────────────
+def validate_history(history):
+    """Strip system-role injections, cap length, limit content size."""
+    if not isinstance(history, list):
+        return []
+    clean = []
+    for m in history:
+        if not isinstance(m, dict):
+            continue
+        role = m.get("role")
+        if role not in ("user", "assistant"):
+            continue  # silently drop any system-role injection attempts
+        content = m.get("content")
+        if isinstance(content, str):
+            content = content[:8000]  # cap individual message length
+        elif isinstance(content, list):
+            pass  # image message content, pass through
+        else:
+            continue
+        clean.append({"role": role, "content": content})
+    return clean[-20:]  # max 20 messages
+
+# ── Model & personality ───────────────────────────────────────────────────────
 SCOUT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 
 def load_personality():
@@ -214,11 +255,10 @@ def format_search_results(results):
     return "\n\n---\n\n".join(parts)
 
 
-# ── OTP email system ──────────────────────────────────────────────────────────
-_codes: dict = {}
-
-GMAIL_ADDRESS  = os.environ.get("GMAIL_ADDRESS", "glitch.l.l.m.ai@gmail.com")
-GMAIL_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+# ── OTP email (Brevo) ─────────────────────────────────────────────────────────
+BREVO_API_KEY    = os.environ.get("BREVO_API_KEY", "")
+SENDER_EMAIL     = os.environ.get("SENDER_EMAIL", "glitch.l.l.m.ai@gmail.com")
+SENDER_NAME      = os.environ.get("SENDER_NAME", "Glitch")
 
 def send_otp_email(to_email: str, code: str):
     html = f"""<!DOCTYPE html>
@@ -232,15 +272,19 @@ def send_otp_email(to_email: str, code: str):
           <span style="font-size:28px;font-weight:800;color:#e8e8f0;letter-spacing:-0.03em;">Glitch</span>
         </td></tr>
         <tr><td style="background:#16161a;border:1px solid #2a2a35;border-radius:16px;padding:36px 32px;">
-          <p style="margin:0 0 6px;font-size:20px;font-weight:700;color:#e8e8f0;letter-spacing:-0.02em;">Your verification code</p>
-          <p style="margin:0 0 28px;font-size:14px;color:#6b6b80;line-height:1.6;">Enter this code on the sign-up page. It expires in 10 minutes.</p>
+          <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#e8e8f0;">Your verification code</p>
+          <p style="margin:0 0 28px;font-size:13px;color:#6b6b80;line-height:1.6;">
+            Enter this code on the sign-up page. It expires in 10 minutes.
+          </p>
           <div style="background:#0e0e11;border:1px solid #2a2a35;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
-            <span style="font-size:40px;font-weight:800;color:#7c6ef0;letter-spacing:0.18em;">{code}</span>
+            <span style="font-size:38px;font-weight:800;letter-spacing:0.15em;color:#7c6ef0;">{code}</span>
           </div>
-          <p style="margin:0;font-size:13px;color:#6b6b80;line-height:1.65;">If you didn't request this, you can safely ignore this email.</p>
+          <p style="margin:0;font-size:12px;color:#6b6b80;text-align:center;">
+            If you didn't request this, you can safely ignore this email.
+          </p>
         </td></tr>
-        <tr><td style="padding-top:24px;text-align:center;">
-          <p style="margin:0;font-size:12px;color:#3a3a50;">Glitch &middot; glitch-ozuf.onrender.com</p>
+        <tr><td style="padding-top:20px;text-align:center;">
+          <span style="font-size:12px;color:#3a3a50;">Glitch &middot; <a href="https://glitch-ozuf.onrender.com" style="color:#7c6ef0;text-decoration:none;">glitch-ozuf.onrender.com</a></span>
         </td></tr>
       </table>
     </td></tr>
@@ -248,22 +292,25 @@ def send_otp_email(to_email: str, code: str):
 </body>
 </html>"""
 
-    api_key = os.environ.get("BREVO_API_KEY", "")
     resp = req_lib.post(
         "https://api.brevo.com/v3/smtp/email",
-        headers={"api-key": api_key, "Content-Type": "application/json"},
+        headers={
+            "api-key": BREVO_API_KEY,
+            "Content-Type": "application/json"
+        },
         json={
-            "sender": {"name": "Glitch", "email": "glitch.l.l.m.ai@gmail.com"},
+            "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
             "to": [{"email": to_email}],
             "subject": f"{code} is your Glitch code",
-            "htmlContent": html,
-            "textContent": f"Your Glitch verification code is: {code}\n\nExpires in 10 minutes."
+            "htmlContent": html
         },
-        timeout=8
+        timeout=10
     )
-    if resp.status_code >= 400:
-        raise Exception(resp.text)
+    if not resp.ok:
+        raise Exception(f"Brevo error {resp.status_code}: {resp.text}")
 
+
+# ── OTP routes ────────────────────────────────────────────────────────────────
 @app.route("/api/send-code", methods=["POST"])
 def api_send_code():
     data  = request.get_json()
@@ -283,12 +330,18 @@ def api_send_code():
 
     return jsonify({"ok": True})
 
+
 @app.route("/api/verify-code", methods=["POST"])
 def api_verify_code():
-    ip      = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
     data    = request.get_json()
     email   = (data or {}).get("email", "").strip().lower()
     entered = (data or {}).get("code", "").strip()
+
+    # OTP brute-force protection
+    if check_otp_attempts(email):
+        return jsonify({"ok": False, "error": "Too many attempts. Try again in 10 minutes."}), 429
+
+    record_otp_attempt(email)
 
     record = _codes.get(email)
     if not record:
@@ -300,32 +353,97 @@ def api_verify_code():
     if entered != stored_code:
         return jsonify({"ok": False, "error": "Wrong code"}), 400
 
+    # Success — clear code and attempt counter
     del _codes[email]
-    # Tell the frontend whether this user already has a username set
-    existing_username = _usernames.get(ip, "")
-    return jsonify({"ok": True, "hasUsername": bool(existing_username), "username": existing_username})
+    clear_otp_attempts(email)
+
+    # Ensure user row exists
+    sb_upsert("users", {"email": email})
+
+    # Get existing username
+    rows = sb_get("users", {"email": f"eq.{email}", "select": "username"})
+    existing_username = (rows[0].get("username") or "") if rows else ""
+
+    # Generate a secure session token
+    token = secrets.token_urlsafe(32)
+    sb_insert("sessions", {"token": token, "email": email})
+
+    return jsonify({
+        "ok": True,
+        "token": token,
+        "hasUsername": bool(existing_username),
+        "username": existing_username
+    })
 
 
 # ── Username routes ───────────────────────────────────────────────────────────
 @app.route("/api/username", methods=["GET"])
 def get_username():
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
-    return jsonify({"username": _usernames.get(ip, "")})
+    email = get_session_email(request)
+    if not email:
+        return jsonify({"username": ""})
+    rows = sb_get("users", {"email": f"eq.{email}", "select": "username"})
+    username = (rows[0].get("username") or "") if rows else ""
+    return jsonify({"username": username})
+
 
 @app.route("/api/username", methods=["POST"])
 def set_username():
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    email = get_session_email(request)
+    if not email:
+        return jsonify({"error": "not logged in"}), 401
     data = request.get_json()
     name = (data.get("username") or "").strip()[:32]
     if not name:
         return jsonify({"error": "empty"}), 400
-    import re as _re
-    name = _re.sub(r"[^\w\s\-\.!]", "", name)[:32].strip()
+    name = re.sub(r"[^\w\s\-\.!]", "", name)[:32].strip()
     if not name:
         return jsonify({"error": "invalid"}), 400
-    _usernames[ip] = name
-    _save_usernames(_usernames)
+    sb_upsert("users", {"email": email, "username": name})
     return jsonify({"username": name})
+
+
+# ── Chat storage routes ───────────────────────────────────────────────────────
+@app.route("/api/chats", methods=["GET"])
+def get_chats():
+    email = get_session_email(request)
+    if not email:
+        return jsonify({"chats": [], "loggedIn": False})
+    rows = sb_get("chats", {
+        "email": f"eq.{email}",
+        "select": "data",
+        "order": "updated_at.desc",
+        "limit": "50"
+    })
+    chats = [r["data"] for r in rows if "data" in r]
+    return jsonify({"chats": chats, "loggedIn": True})
+
+
+@app.route("/api/chats", methods=["POST"])
+def save_chat():
+    email = get_session_email(request)
+    if not email:
+        return jsonify({"error": "not logged in"}), 401
+    data = request.get_json()
+    chat = data.get("chat")
+    if not chat or not chat.get("id"):
+        return jsonify({"error": "invalid"}), 400
+    ok = sb_upsert("chats", {
+        "id": chat["id"],
+        "email": email,
+        "data": chat,
+        "updated_at": date.today().isoformat()
+    })
+    return jsonify({"ok": ok})
+
+
+@app.route("/api/chats/<chat_id>", methods=["DELETE"])
+def delete_chat_route(chat_id):
+    email = get_session_email(request)
+    if not email:
+        return jsonify({"error": "not logged in"}), 401
+    ok = sb_delete("chats", {"id": f"eq.{chat_id}", "email": f"eq.{email}"})
+    return jsonify({"ok": ok})
 
 
 # ── Page routes ───────────────────────────────────────────────────────────────
@@ -339,7 +457,6 @@ def login_page():
 
 @app.route("/signup")
 def signup_page():
-    # Renders the same login template but with ?new=1 flag baked in
     return render_template("login.html", signup=True)
 
 @app.route("/privacy")
@@ -367,12 +484,12 @@ def chat():
         )
 
     data      = request.get_json()
-    history   = data.get("history", [])
+    raw_history = data.get("history", [])
     think     = data.get("think", False)
-    has_image = any(isinstance(m.get("content"), list) for m in history)
 
-    if len(history) > 20:
-        history = history[-20:]
+    # Validate and sanitize history
+    history   = validate_history(raw_history)
+    has_image = any(isinstance(m.get("content"), list) for m in history)
 
     last_user_msg = ""
     for m in reversed(history):
@@ -440,6 +557,7 @@ def chat():
     return Response(stream_with_context(generate()), mimetype="text/plain")
 
 
+# ── Image generation route ────────────────────────────────────────────────────
 @app.route("/imagine", methods=["POST"])
 def imagine():
     data    = request.get_json()
@@ -450,7 +568,7 @@ def imagine():
         return jsonify({"error": "No message"}), 400
 
     context_lines = []
-    for m in history[-6:]:
+    for m in validate_history(history)[-6:]:
         if isinstance(m.get("content"), str):
             role = "User" if m["role"] == "user" else "Glitch"
             context_lines.append(f"{role}: {m['content']}")
@@ -471,7 +589,7 @@ def imagine():
             max_tokens=120
         )
         prompt = resp.choices[0].message.content.strip().strip('"').strip("'")
-    except Exception as e:
+    except Exception:
         prompt = message
 
     seed    = int.from_bytes(os.urandom(4), "big")
@@ -489,7 +607,7 @@ def print_banner():
  ██    ██ ██      ██    ██    ██      ██   ██
   ██████  ███████ ██    ██     ██████ ██   ██
 \033[0m
-  \033[90mv1.8 · server-side chats · Gmail SMTP\033[0m
+  \033[90mv2.0 · Supabase · token auth · OTP rate limit\033[0m
 """)
 
 if __name__ == "__main__":

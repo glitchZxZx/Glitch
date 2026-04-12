@@ -199,12 +199,8 @@ input.err   { border-color: var(--error); }
 
 </div>
 <script>
-// Detect whether this is a "signup" flow (new user) or "login" flow (returning user)
-// /signup route or ?new=1 param → signup mode (always show name step)
-// /login route → login mode (skip name step if user already has one)
 const isSignupMode = window.location.pathname === '/signup' || new URLSearchParams(window.location.search).get('new') === '1';
 
-// Set heading based on mode
 if (isSignupMode) {
   document.getElementById('step1-title').textContent = 'Create your account';
   document.getElementById('step1-sub').textContent = 'Enter your email — we\'ll send you a code. No password needed.';
@@ -213,7 +209,6 @@ if (isSignupMode) {
   document.getElementById('step1-sub').textContent = 'Enter your email to sign in. We\'ll send you a one-time code.';
 }
 
-// Dots: 3 for signup (email → otp → name), 2 for login (email → otp → done)
 const totalDots = isSignupMode ? 3 : 2;
 const dotsEl = document.getElementById('dots');
 dotsEl.innerHTML = '';
@@ -223,7 +218,16 @@ for (let i = 0; i < totalDots; i++) {
   dotsEl.appendChild(d);
 }
 
-let userEmail = '', timer = null, timerVal = 30;
+let userEmail = '', sessionToken = '', timer = null, timerVal = 30;
+
+// ── Helper: get auth headers ────────────────────────────────────────────────
+function authHeaders() {
+  const token = sessionToken || localStorage.getItem('glitch_session') || '';
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'X-Session-Token': token } : {})
+  };
+}
 
 function dots(active) {
   document.querySelectorAll('.dot').forEach((d, i) => {
@@ -337,7 +341,7 @@ async function verifyCode() {
     if (!res.ok || !data.ok) {
       errEl.textContent = data.error === 'Code expired'
         ? 'Code expired — request a new one.'
-        : 'Incorrect code. Try again.';
+        : (data.error || 'Incorrect code. Try again.');
       errEl.classList.add('show');
       otps().forEach(o => { o.classList.add('err'); o.value = ''; });
       otps()[0].focus();
@@ -348,14 +352,17 @@ async function verifyCode() {
 
     clearTimer();
 
-    // If the user already has a username AND we're in login mode → skip name step
+    // ── Save session token to localStorage ──────────────────────────────────
+    if (data.token) {
+      sessionToken = data.token;
+      localStorage.setItem('glitch_session', data.token);
+    }
+
     if (data.hasUsername && !isSignupMode) {
       showDoneScreen(data.username, true);
     } else if (data.hasUsername && isSignupMode) {
-      // Already has account, just log them in anyway
       showDoneScreen(data.username, true);
     } else {
-      // New user — ask for a name
       show('step-name', 2);
       setTimeout(() => document.getElementById('nameInput').focus(), 80);
     }
@@ -407,9 +414,10 @@ async function finish() {
     return;
   }
 
+  // Send token in header when setting username
   await fetch('/api/username', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify({ username: name })
   });
 
