@@ -142,14 +142,15 @@ def validate_history(history):
         if isinstance(content, str):
             content = content[:8000]  # cap individual message length
         elif isinstance(content, list):
-            pass  # image message content, pass through
+            text_parts = [p.get("text", "") for p in content if isinstance(p, dict) and p.get("type") == "text"]
+            content = " ".join(text_parts).strip() or "[image]"
         else:
             continue
         clean.append({"role": role, "content": content})
     return clean[-20:]  # max 20 messages
 
 # ── Model & personality ───────────────────────────────────────────────────────
-SCOUT_MODEL = "openai/gpt-oss-120b"
+SCOUT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 
 def load_personality():
     try:
