@@ -1129,22 +1129,24 @@ async function sendMessage() {
 
   cursor.remove();
   history.push({ role: "assistant", content: reply });
-  sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
+  if (currentIndex >= 0 && sessions[currentIndex]) {
+    sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
 
-  // Generate AI title for brand-new chats (only 1 exchange so far)
-  const isNewChat = history.filter(m => m.role === "assistant").length === 1;
-  if (isNewChat && text) {
-    try {
-      const titleRes = await fetch("/api/title", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userMsg: text, aiMsg: reply.slice(0, 200) })
-      });
-      const titleData = await titleRes.json();
-      if (titleData.title) {
-        sessions[currentIndex].title = titleData.title;
-      }
-    } catch { /* fall back to existing title */ }
+    // Generate AI title for brand-new chats (only 1 exchange so far)
+    const isNewChat = history.filter(m => m.role === "assistant").length === 1;
+    if (isNewChat && text) {
+      try {
+        const titleRes = await fetch("/api/title", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userMsg: text, aiMsg: reply.slice(0, 200) })
+        });
+        const titleData = await titleRes.json();
+        if (titleData.title && currentIndex >= 0 && sessions[currentIndex]) {
+          sessions[currentIndex].title = titleData.title;
+        }
+      } catch { /* fall back to existing title */ }
+    }
   }
 
   saveAndRenderSidebar();
@@ -1174,7 +1176,9 @@ async function handleImageGeneration(text) {
     img.onclick = () => window.open(data.url, "_blank");
     bubble.appendChild(img);
     history.push({ role: "assistant", content: reply });
-    sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
+    if (currentIndex >= 0 && sessions[currentIndex]) {
+      sessions[currentIndex].history = history.filter(m => typeof m.content === "string");
+    }
     saveAndRenderSidebar();
   } catch(e) {
     bubble.innerHTML = `<span style="color:var(--danger);">Couldn't generate image: ${e.message}</span>`;
