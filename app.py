@@ -555,10 +555,40 @@ def chat():
                 else:
                     raise
 
+            # Stream chunks, stripping <think>...</think> blocks (Qwen3 reasoning tokens)
+            in_think = False
+            buf = ""
             for chunk in stream:
                 content = chunk.choices[0].delta.content
-                if content:
-                    yield content
+                if not content:
+                    continue
+                buf += content
+                # Process buffer to strip <think> blocks
+                while True:
+                    if in_think:
+                        end = buf.find("</think>")
+                        if end != -1:
+                            buf = buf[end + len("</think>"):]
+                            in_think = False
+                        else:
+                            buf = ""  # discard everything inside think block
+                            break
+                    else:
+                        start = buf.find("<think>")
+                        if start != -1:
+                            if start > 0:
+                                yield buf[:start]
+                            buf = buf[start + len("<think>"):]
+                            in_think = True
+                        else:
+                            # No think tag — safe to yield, but keep last 7 chars
+                            # buffered in case a tag is split across chunks
+                            if len(buf) > 7:
+                                yield buf[:-7]
+                                buf = buf[-7:]
+                            break
+            if buf and not in_think:
+                yield buf
 
         except Exception as e:
             error_msg = str(e)
