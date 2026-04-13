@@ -150,7 +150,7 @@ def validate_history(history):
     return clean[-20:]  # max 20 messages
 
 # ── Model & personality ───────────────────────────────────────────────────────
-SCOUT_MODEL    = "qwen/qwen3-32b"
+SCOUT_MODEL    = "meta-llama/llama-4-scout-17b-16e-instruct"
 FALLBACK_MODEL = "llama-3.3-70b-versatile"
 
 def load_personality():
