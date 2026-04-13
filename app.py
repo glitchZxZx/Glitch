@@ -150,7 +150,8 @@ def validate_history(history):
     return clean[-20:]  # max 20 messages
 
 # ── Model & personality ───────────────────────────────────────────────────────
-SCOUT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+SCOUT_MODEL    = "qwen/qwen3-32b"
+FALLBACK_MODEL = "llama-3.3-70b-versatile"
 
 def load_personality():
     try:
@@ -498,7 +499,7 @@ def chat():
             last_user_msg = m["content"]
             break
 
-    max_tokens = 768 if think else 512
+    max_tokens = 1200 if think else 800
 
     def generate():
         try:
@@ -537,12 +538,23 @@ def chat():
 
             messages = [{"role": "system", "content": system}] + history
 
-            stream = client.chat.completions.create(
-                model=SCOUT_MODEL,
-                messages=messages,
-                stream=True,
-                max_tokens=max_tokens
-            )
+            def try_stream(model):
+                return client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    stream=True,
+                    max_tokens=max_tokens
+                )
+
+            try:
+                stream = try_stream(SCOUT_MODEL)
+            except Exception as e:
+                if "429" in str(e) or "rate_limit" in str(e).lower():
+                    print(f"[Fallback] {SCOUT_MODEL} rate limited, switching to {FALLBACK_MODEL}")
+                    stream = try_stream(FALLBACK_MODEL)
+                else:
+                    raise
+
             for chunk in stream:
                 content = chunk.choices[0].delta.content
                 if content:
@@ -551,7 +563,7 @@ def chat():
         except Exception as e:
             error_msg = str(e)
             if "429" in error_msg or "rate_limit" in error_msg.lower():
-                yield "(Groq is busy right now — try again in a moment)"
+                yield "(Groq is really busy right now — try again in a moment)"
             else:
                 yield f"(Error: {e})"
 
